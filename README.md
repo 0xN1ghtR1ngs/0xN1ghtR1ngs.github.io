@@ -1,1 +1,1 @@
-#0xN1ghtR1ngs InfoSec Blog
+0xN1ghtR1ngs InfoSec Blog
