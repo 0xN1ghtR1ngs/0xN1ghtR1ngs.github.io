@@ -1,5 +1,5 @@
 ---
-title: About
+title: Welcome to the 0xN1ghtR1ngs Blog
 
 # The About page
 # v2.0
@@ -8,4 +8,4 @@ title: About
 # MIT License
 ---
 
-> **Note**: Add Markdown syntax content to file `tabs/about.md` and it will show up on this page.
+hey there! We the 0xN1ghtR1ngs team, are interested in the field of cybersecurity, and this blog is to publish every piece of information or challenge we meet.

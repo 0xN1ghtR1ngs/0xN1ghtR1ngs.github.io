@@ -8,35 +8,33 @@
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 #--------------------------
 
-title: Chirpy                          # the main title
+title: 0xN1ghtR1ngs                          # the main title
 
-tagline: A text-focused Jekyll theme.  # it will display as the sub-title
+tagline: CTF Player | Pentester | InfoSec Enthusiast  # it will display as the sub-title
 
 description: >-                        # used by seo meta and the atom feed
-  A minimal, portfolio, sidebar,
-  bootstrap Jekyll theme with responsive web design
-  and focuses on text presentation.
+  0xN1ghtR1ngs InfoSec Blog
 
 # Replace with the website url, e.g. 'https://username.github.io'
-url: 'protocol://domain'
+url: 'https://0xn1ghtr1ngs.github.io'
 
-author: your_full_name                  # change to your full name
+author: Ahmed, ezi0x00                  # change to your full name
 
 avatar: /assets/img/sample/avatar.jpg   # support internet resources
 
 github:
-  username: github_username             # change to your github username
+  username: 0xN1ghtR1ngs             # change to your github username
 
 twitter:
   username: twitter_username            # change to your twitter username
 
 social:
-  name: your_full_name                  # it will shows as the copyright owner in Footer
-  email: example@doamin.com             # change to your email address
+  name: 0xN1ghtR1ngs                # it will shows as the copyright owner in Footer
+  email: 0xn1ghtr1ngs@gmail.com             # change to your email address
   links:
     # The first element serves as the copyright owner's link
     - https://twitter.com/username      # change to your twitter homepage
-    - https://github.com/username       # change to your github homepage
+    - https://github.com/0xN1ghtR1ngs       # change to your github homepage
     # Uncomment below to add more social links
     # - https://www.facebook.com/username
     # - https://www.linkedin.com/in/username
