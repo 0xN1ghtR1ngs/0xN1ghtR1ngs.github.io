@@ -29,7 +29,7 @@ twitter:
   username: twitter_username            # change to your twitter username
 
 social:
-  name: Hameed                # it will shows as the copyright owner in Footer
+  name: 0xN1ghtR1ngs                # it will shows as the copyright owner in Footer
   email: 0xn1ghtr1ngs@gmail.com             # change to your email address
   links:
     # The first element serves as the copyright owner's link
@@ -52,7 +52,7 @@ baseurl: ''
 timezone: Asia/Shanghai
 
 google_analytics:
-  id: ''          # Fill with your Google Analytics ID
+  id: 'G-86J1B4FKH9'          # Fill with your Google Analytics ID
   pv:
     # The Google Analytics pageviews switch.
     # DO NOT enable it unless you know how to deploy the Google Analytics superProxy.
