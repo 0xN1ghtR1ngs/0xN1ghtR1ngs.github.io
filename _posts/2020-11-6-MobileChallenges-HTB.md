@@ -3,7 +3,7 @@ title: HackTheBox — Mobile Challenges
 date: 2020-11-6 04:33:00 +0530
 categories: [HackTheBox, Mobile Challenges]
 tags: [hackthebox, ctf, challenges, mobile, leaks data,files, secure coding, reverse engineer, encryption, application security]
-image: /assets/img/Posts/mobilechallenges.png
+image: /assets/img/Posts/mobilechallenges.jpg
 ---
 >The challenges of Hack the Box in the field of mobile applications,
 have a kind of intelligence and test your ability to search, and you will learn about some types of files,
