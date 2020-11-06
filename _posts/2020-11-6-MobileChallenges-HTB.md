@@ -133,7 +133,7 @@ let's decrypt it with this [**tool**](https://www.devglan.com/online-tools/aes-e
 
 ![website](/assets/img/Posts/decrypt2.png)
 
-and here we are finished all mobile challenes 
+and here we are finished all mobile challenges. 
 
 Thanks for reading, Suggestions & Feedback are appreciated !
 
