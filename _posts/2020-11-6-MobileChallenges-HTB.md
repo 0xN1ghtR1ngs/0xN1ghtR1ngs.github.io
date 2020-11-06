@@ -125,7 +125,7 @@ hollaaaaa :"D we found iv key
 ```
 >this kind of encryption, it's called `AES` is a symmetric encryption algorithm.
 it used `IV`  initialization vector as a secret key for data encryption.
-so we have encoded text in plist file then we nedd iv key to decode it. 
+so we have encoded text in plist file then we need iv key to decode it. 
 
 let's decrypt it with this [**tool**](https://www.devglan.com/online-tools/aes-encryption-decryption)
 
