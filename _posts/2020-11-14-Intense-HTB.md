@@ -272,6 +272,7 @@ The cookie : auth=dXNlcm5hbWU9Z3Vlc3Q7c2VjcmV0PTg0OTgzYzYwZjdkYWFkYzFjYjg2OTg2Mj
 The lenght :11
 ```
 try it by edit cookie in browser.
+
 ![website](/assets/img/Posts/logincookieadmin.png)
 
 if you remember source code review from the app code source we have two routes in admin section, `logfile`,`logdir`
