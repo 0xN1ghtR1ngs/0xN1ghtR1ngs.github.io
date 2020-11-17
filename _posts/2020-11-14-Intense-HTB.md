@@ -3,7 +3,7 @@ title: HackTheBox — Intense Writeup
 date: 2020-11-14 04:41:00 +0530
 categories: [HackTheBox,Linux Machines]
 tags: [hackthebox, intense, ctf, linux, code review, code vulnerable, sqli, crack cookies, python, lfi, snmp, shell, exploit, analysis code, buffer overflow, debugging, canary, aslr, rop, privilege escaltion, root]
-image: /assets/img/Posts/Intense.png
+image: /assets/img/Posts/Intense.jpeg
 ---
 ## Reconnaissance
 
