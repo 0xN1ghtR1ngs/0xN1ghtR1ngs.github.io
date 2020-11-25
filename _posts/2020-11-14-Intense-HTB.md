@@ -542,7 +542,7 @@ Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RU
 there are `PIE`, `RELRO -canary protection`, so when we do `BOF`, it's impossible canary will detect stack smash.
 my mood:
 
-[!website](/assets/img/Posts/7warat.jpg)
+![website](/assets/img/Posts/7warat.jpg)
 
 There is no impossible that we can do that by `canary leak`.
 let's do some reverse in radare2 and focus on `sym.handle_client`.
