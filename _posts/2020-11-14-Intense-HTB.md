@@ -540,7 +540,8 @@ RELRO           STACK CANARY      NX            PIE             RPATH      RUNPA
 Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH   79) Symbols       No    0               2               note_server
 ```
 there are `PIE`, `RELRO -canary protection`, so when we do `BOF`, it's impossible canary will detect stack smash.
-my mood: 	
+my mood:
+
 [!website](/assets/img/Posts/7warat.jpg)
 
 There is no impossible that we can do that by `canary leak`.
@@ -576,7 +577,8 @@ libc = ELF('/lib/x86_64-linux-gnu/libc.so.6')
 #libc = ELF('./libc')
 p = remote("127.0.0.1", 5001)
 ```
-you can understand this lines from this [**toutrial**](https://docs.pwntools.com/en/stable/intro.html)
+you can understand this lines from this [**toutrial**](https://docs.pwntools.com/en/stable/intro.html). 
+
 but what's mean libc?
 >is commonly used as a shorthand for the "standard C library", a library of standard functions that can be used by all C programs (and sometimes by programs in other languages). Because of some history (see below), use of the term "libc" to refer to the standard C library is somewhat ambiguous on Linux.
 >
@@ -1144,7 +1146,9 @@ gef➤
 ```
 The return address is at an offset of `0xf54` from the base
 just you can see `vmmap` and do it: 
-start offset - libc find 
+
+`start offset - libc find`
+
 ```shell
 ezi0x00@kali:~/HTB/Intense$ python 
 Python 2.7.18 (default, Apr 20 2020, 20:30:41) 
