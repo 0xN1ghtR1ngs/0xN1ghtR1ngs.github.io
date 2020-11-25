@@ -8,7 +8,11 @@ image: /assets/img/Posts/Intense.jpeg
 >/
 >
 >/
+>
 >Its difficulty level is hard and has an IP 10.10.10.195
+>
+>Really, this machine taught me a lot and a lot, from the technical things they taught me the code review and some scripting skills, I got to know the SQLite Injection, and most of all, I learned a little bit about the Binary Exploration.
+>
 
 ## Reconnaissance
 
