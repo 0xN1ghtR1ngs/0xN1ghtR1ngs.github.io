@@ -580,6 +580,7 @@ you can understand this lines from this [**toutrial**](https://docs.pwntools.com
 but what's mean libc?
 >is commonly used as a shorthand for the "standard C library", a library of standard functions that can be used by all C programs (and sometimes by programs in other languages). Because of some history (see below), use of the term "libc" to refer to the standard C library is somewhat ambiguous on Linux.
 >
+
 because this local machine just to know where is `libc` file  
 ```
 ezi0x00@kali:~/HTB/Intense$ ldd note_server
